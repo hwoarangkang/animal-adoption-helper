@@ -63,18 +63,6 @@
         .animal-info div {
             margin: 5px 0;
         }
-        .copy-button {
-            position: absolute;
-            bottom: 10px;
-            right: 10px;
-            background: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            padding: 5px 10px;
-            cursor: pointer;
-            font-size: 12px;
-        }
         .pagination {
             display: flex;
             justify-content: center;
@@ -284,7 +272,6 @@
                         <div>開放日期：${animal.animal_opendate}</div>
                         <div>入所日期：${animal.animal_createtime}</div>
                     </div>
-                    <button class="copy-button" onclick="copyAnimalInfo('${animal.animal_id}')">複製資料</button>
                 </div>
             `).join('');
         }
@@ -340,27 +327,6 @@
                 };
                 pagination.appendChild(nextButton);
             }
-        }
-
-        // 複製動物資訊
-        function copyAnimalInfo(animalId) {
-            const animal = allAnimals.find(a => a.animal_id === animalId);
-            if (!animal) return;
-
-            const info = `
-動物編號：${animal.animal_id}
-收容編號：${animal.animal_subid}
-品種：${animal.animal_Variety}
-性別：${animal.animal_sex === 'M' ? '男生' : '女生'}
-收容所：${animal.shelter_name}
-來源地點：${animal.animal_foundplace || '無資料'}
-開放日期：${animal.animal_opendate}
-入所日期：${animal.animal_createtime}
-            `.trim();
-
-            navigator.clipboard.writeText(info)
-                .then(() => alert('已複製'))
-                .catch(() => alert('複製失敗，請手動複製。'));
         }
 
         // 右鍵儲存圖片
