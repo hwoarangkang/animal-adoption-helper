@@ -213,7 +213,7 @@
 
             // 構建API篩選條件
             let filters = [`animal_status eq 'OPEN'`];
-            if (area) filters.push(`animal_area_pkid eq ${area}`);
+            if (area) filters.push(`animal_area_pkid eq '${area}'`);
             if (type) filters.push(`animal_kind eq '${type}'`);
             if (color) filters.push(`animal_colour eq '${color}'`);
             if (gender) filters.push(`animal_sex eq '${gender}'`);
@@ -279,7 +279,7 @@
                         <div>品種：${animal.animal_Variety}</div>
                         <div>性別：${animal.animal_sex === 'M' ? '男生' : '女生'}</div>
                         <div>收容所：${animal.shelter_name}</div>
-                        <div>來源地點：${animal.animal_foundplace}</div>
+                        <div>來源地點：${animal.animal_foundplace || '無資料'}</div>
                         <div>開放日期：${animal.animal_opendate}</div>
                         <div>入所日期：${animal.animal_createtime}</div>
                     </div>
@@ -294,7 +294,29 @@
             const pagination = document.getElementById('pagination');
             pagination.innerHTML = '';
 
-            for (let i = 1; i <= totalPages; i++) {
+            // 顯示最多 5 個分頁按鈕
+            const maxButtons = 5;
+            let startPage = Math.max(1, currentPage - Math.floor(maxButtons / 2));
+            let endPage = Math.min(totalPages, startPage + maxButtons - 1);
+
+            if (endPage - startPage + 1 < maxButtons) {
+                startPage = Math.max(1, endPage - maxButtons + 1);
+            }
+
+            // 上一頁按鈕
+            if (startPage > 1) {
+                const prevButton = document.createElement('button');
+                prevButton.textContent = '上一頁';
+                prevButton.onclick = () => {
+                    currentPage = Math.max(1, currentPage - 1);
+                    renderGallery();
+                    renderPagination();
+                };
+                pagination.appendChild(prevButton);
+            }
+
+            // 分頁按鈕
+            for (let i = startPage; i <= endPage; i++) {
                 const button = document.createElement('button');
                 button.textContent = i;
                 button.classList.toggle('active', i === currentPage);
@@ -304,6 +326,18 @@
                     renderPagination();
                 };
                 pagination.appendChild(button);
+            }
+
+            // 下一頁按鈕
+            if (endPage < totalPages) {
+                const nextButton = document.createElement('button');
+                nextButton.textContent = '下一頁';
+                nextButton.onclick = () => {
+                    currentPage = Math.min(totalPages, currentPage + 1);
+                    renderGallery();
+                    renderPagination();
+                };
+                pagination.appendChild(nextButton);
             }
         }
 
@@ -318,7 +352,7 @@
 品種：${animal.animal_Variety}
 性別：${animal.animal_sex === 'M' ? '男生' : '女生'}
 收容所：${animal.shelter_name}
-來源地點：${animal.animal_foundplace}
+來源地點：${animal.animal_foundplace || '無資料'}
 開放日期：${animal.animal_opendate}
 入所日期：${animal.animal_createtime}
             `.trim();
