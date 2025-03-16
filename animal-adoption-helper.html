@@ -2,6 +2,7 @@
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>動物認領養小幫手</title>
     <style>
         body {
@@ -107,6 +108,19 @@
             50% { width: 100%; }
             100% { width: 0; }
         }
+
+        /* 手機瀏覽樣式 */
+        @media (max-width: 600px) {
+            .gallery {
+                grid-template-columns: 1fr; /* 手機瀏覽時一列顯示 */
+            }
+            .filter-group {
+                flex-direction: column;
+            }
+            select, button {
+                width: 100%;
+            }
+        }
     </style>
 </head>
 <body>
@@ -116,28 +130,28 @@
     <div class="filter-group">
         <select id="areaSelect" onchange="loadAnimals()">
             <option value="">全部地區</option>
-            <option value="2">臺北市</option>
-            <option value="3">新北市</option>
-            <option value="4">基隆市</option>
-            <option value="5">宜蘭縣</option>
-            <option value="6">桃園市</option>
-            <option value="7">新竹縣</option>
-            <option value="8">新竹市</option>
-            <option value="9">苗栗縣</option>
-            <option value="10">臺中市</option>
-            <option value="11">彰化縣</option>
-            <option value="12">南投縣</option>
-            <option value="13">雲林縣</option>
-            <option value="14">嘉義縣</option>
-            <option value="15">嘉義市</option>
-            <option value="16">臺南市</option>
-            <option value="17">高雄市</option>
-            <option value="18">屏東縣</option>
-            <option value="19">花蓮縣</option>
-            <option value="20">臺東縣</option>
-            <option value="21">澎湖縣</option>
-            <option value="22">金門縣</option>
-            <option value="23">連江縣</option>
+            <option value="臺北市">臺北市</option>
+            <option value="新北市">新北市</option>
+            <option value="基隆市">基隆市</option>
+            <option value="宜蘭縣">宜蘭縣</option>
+            <option value="桃園市">桃園市</option>
+            <option value="新竹縣">新竹縣</option>
+            <option value="新竹市">新竹市</option>
+            <option value="苗栗縣">苗栗縣</option>
+            <option value="臺中市">臺中市</option>
+            <option value="彰化縣">彰化縣</option>
+            <option value="南投縣">南投縣</option>
+            <option value="雲林縣">雲林縣</option>
+            <option value="嘉義縣">嘉義縣</option>
+            <option value="嘉義市">嘉義市</option>
+            <option value="臺南市">臺南市</option>
+            <option value="高雄市">高雄市</option>
+            <option value="屏東縣">屏東縣</option>
+            <option value="花蓮縣">花蓮縣</option>
+            <option value="臺東縣">臺東縣</option>
+            <option value="澎湖縣">澎湖縣</option>
+            <option value="金門縣">金門縣</option>
+            <option value="連江縣">連江縣</option>
         </select>
 
         <select id="typeSelect" onchange="loadAnimals()">
@@ -240,7 +254,7 @@
             // 只顯示當前篩選地區的動物
             const area = document.getElementById('areaSelect').value;
             if (area) {
-                allAnimals = sortedAnimals.filter(animal => animal.animal_area_pkid == area);
+                allAnimals = sortedAnimals.filter(animal => animal.animal_area_pkid === area);
             } else {
                 allAnimals = sortedAnimals;
             }
