@@ -44,6 +44,7 @@
             padding: 10px;
             transition: transform 0.2s;
             cursor: pointer;
+            position: relative;
         }
         .animal-card.selected {
             border-color: #4CAF50;
@@ -61,6 +62,18 @@
         }
         .animal-info div {
             margin: 5px 0;
+        }
+        .copy-button {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 5px 10px;
+            cursor: pointer;
+            font-size: 12px;
         }
         .pagination {
             display: flex;
@@ -163,7 +176,6 @@
     <div class="loading-bar" id="loadingBar"></div>
 
     <!-- 動物展示區 -->
-    <div id="selectedCount">已選擇 0 隻動物</div>
     <div class="gallery" id="gallery"></div>
 
     <!-- 分頁按鈕 -->
@@ -171,7 +183,6 @@
 
     <script>
         let allAnimals = [];
-        let selectedAnimals = [];
         let currentPage = 1;
         const itemsPerPage = 100;
 
@@ -227,11 +238,19 @@
             }
 
             // 按入所日期排序（舊到新）
-            allAnimals.sort((a, b) => {
+            const sortedAnimals = allAnimals.sort((a, b) => {
                 const dateA = new Date(a.animal_createtime);
                 const dateB = new Date(b.animal_createtime);
                 return dateA - dateB;
             });
+
+            // 只顯示當前篩選地區的動物
+            const area = document.getElementById('areaSelect').value;
+            if (area) {
+                allAnimals = sortedAnimals.filter(animal => animal.animal_area_pkid == area);
+            } else {
+                allAnimals = sortedAnimals;
+            }
 
             renderGallery();
             renderPagination();
@@ -245,9 +264,7 @@
             const animalsToShow = allAnimals.slice(start, end);
 
             gallery.innerHTML = animalsToShow.map(animal => `
-                <div class="animal-card" 
-                     onclick="toggleSelection('${animal.animal_id}')"
-                     oncontextmenu="copyAnimalInfo(event, '${animal.animal_id}')">
+                <div class="animal-card">
                     <img src="${animal.album_file || 'https://via.placeholder.com/200x200?text=無照片'}" 
                          class="animal-img" 
                          alt="${animal.animal_Variety}"
@@ -258,14 +275,13 @@
                         <div>品種：${animal.animal_Variety}</div>
                         <div>性別：${animal.animal_sex === 'M' ? '男生' : '女生'}</div>
                         <div>收容所：${animal.shelter_name}</div>
-                        <div>來源區域：${animal.animal_area_pkid}</div>
                         <div>來源地點：${animal.animal_foundplace}</div>
                         <div>開放日期：${animal.animal_opendate}</div>
                         <div>入所日期：${animal.animal_createtime}</div>
                     </div>
+                    <button class="copy-button" onclick="copyAnimalInfo('${animal.animal_id}')">複製資料</button>
                 </div>
             `).join('');
-            updateSelectionUI();
         }
 
         // 分頁按鈕
@@ -287,16 +303,8 @@
             }
         }
 
-        // 選擇功能
-        function toggleSelection(animalId) {
-            const index = selectedAnimals.indexOf(animalId);
-            index === -1 ? selectedAnimals.push(animalId) : selectedAnimals.splice(index, 1);
-            renderGallery();
-        }
-
-        // 右鍵複製動物資訊
-        function copyAnimalInfo(event, animalId) {
-            event.preventDefault(); // 防止右鍵選單彈出
+        // 複製動物資訊
+        function copyAnimalInfo(animalId) {
             const animal = allAnimals.find(a => a.animal_id === animalId);
             if (!animal) return;
 
@@ -306,14 +314,13 @@
 品種：${animal.animal_Variety}
 性別：${animal.animal_sex === 'M' ? '男生' : '女生'}
 收容所：${animal.shelter_name}
-來源區域：${animal.animal_area_pkid}
 來源地點：${animal.animal_foundplace}
 開放日期：${animal.animal_opendate}
 入所日期：${animal.animal_createtime}
             `.trim();
 
             navigator.clipboard.writeText(info)
-                .then(() => alert('動物資訊已複製到剪貼簿！'))
+                .then(() => alert('已複製'))
                 .catch(() => alert('複製失敗，請手動複製。'));
         }
 
@@ -326,10 +333,6 @@
             link.href = imageUrl;
             link.download = `animal_${Date.now()}.jpg`;
             link.click();
-        }
-
-        function updateSelectionUI() {
-            document.getElementById('selectedCount').textContent = `已選擇 ${selectedAnimals.length} 隻動物`;
         }
 
         // 初始化載入
