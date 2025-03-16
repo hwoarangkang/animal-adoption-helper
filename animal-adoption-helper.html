@@ -43,6 +43,7 @@
             border-radius: 8px;
             padding: 10px;
             transition: transform 0.2s;
+            cursor: pointer;
         }
         .animal-card.selected {
             border-color: #4CAF50;
@@ -58,12 +59,8 @@
             margin-top: 10px;
             font-size: 14px;
         }
-        #reportOutput {
-            width: 100%;
-            height: 200px;
-            margin-top: 20px;
-            padding: 10px;
-            font-family: monospace;
+        .animal-info div {
+            margin: 5px 0;
         }
     </style>
 </head>
@@ -124,15 +121,11 @@
 
         <button onclick="loadAnimals()">搜尋</button>
         <button onclick="filterOldestAnimals()">篩選入所最久</button>
-        <button onclick="generateReport()">生成報告</button>
     </div>
 
     <!-- 動物展示區 -->
     <div id="selectedCount">已選擇 0 隻動物</div>
     <div class="gallery" id="gallery"></div>
-
-    <!-- 報告輸出 -->
-    <textarea id="reportOutput" placeholder="點擊「生成報告」獲取文字內容"></textarea>
 
     <script>
         let allAnimals = [];
@@ -192,17 +185,22 @@
         function renderGallery() {
             const gallery = document.getElementById('gallery');
             gallery.innerHTML = allAnimals.map(animal => `
-                <div class="animal-card ${selectedAnimals.includes(animal.animal_id) ? 'selected' : ''}" 
-                     onclick="toggleSelection('${animal.animal_id}')">
+                <div class="animal-card" 
+                     onclick="toggleSelection('${animal.animal_id}')"
+                     oncontextmenu="copyAnimalInfo(event, '${animal.animal_id}')">
                     <img src="${animal.album_file || 'https://via.placeholder.com/200x200?text=無照片'}" 
                          class="animal-img" 
                          alt="${animal.animal_Variety}">
                     <div class="animal-info">
+                        <div>動物編號：${animal.animal_id}</div>
+                        <div>收容編號：${animal.animal_subid}</div>
                         <div>品種：${animal.animal_Variety}</div>
                         <div>性別：${animal.animal_sex === 'M' ? '男生' : '女生'}</div>
                         <div>收容所：${animal.shelter_name}</div>
+                        <div>來源區域：${animal.animal_area_pkid}</div>
+                        <div>來源地點：${animal.animal_foundplace}</div>
                         <div>開放日期：${animal.animal_opendate}</div>
-                        <div>入所時間：${animal.animal_createtime}</div>
+                        <div>入所日期：${animal.animal_createtime}</div>
                     </div>
                 </div>
             `).join('');
@@ -216,24 +214,31 @@
             renderGallery();
         }
 
-        function updateSelectionUI() {
-            document.getElementById('selectedCount').textContent = `已選擇 ${selectedAnimals.length} 隻動物`;
+        // 右鍵複製動物資訊
+        function copyAnimalInfo(event, animalId) {
+            event.preventDefault(); // 防止右鍵選單彈出
+            const animal = allAnimals.find(a => a.animal_id === animalId);
+            if (!animal) return;
+
+            const info = `
+動物編號：${animal.animal_id}
+收容編號：${animal.animal_subid}
+品種：${animal.animal_Variety}
+性別：${animal.animal_sex === 'M' ? '男生' : '女生'}
+收容所：${animal.shelter_name}
+來源區域：${animal.animal_area_pkid}
+來源地點：${animal.animal_foundplace}
+開放日期：${animal.animal_opendate}
+入所日期：${animal.animal_createtime}
+            `.trim();
+
+            navigator.clipboard.writeText(info)
+                .then(() => alert('動物資訊已複製到剪貼簿！'))
+                .catch(() => alert('複製失敗，請手動複製。'));
         }
 
-        // 生成報告
-        function generateReport() {
-            const selected = allAnimals.filter(a => selectedAnimals.includes(a.animal_id));
-            const report = selected.map(animal => 
-`【${animal.animal_Variety}】${animal.animal_sex === 'M' ? '男生' : '女生'}
-📍 ${animal.shelter_name}（${animal.shelter_address}）
-📅 開放認養：${animal.animal_opendate}
-⏰ 入所時間：${animal.animal_createtime}
-🖼️ 照片：${animal.album_file || '無照片'}
-───────────────────`
-            ).join('\n\n');
-
-            document.getElementById('reportOutput').value = 
-                selected.length > 0 ? report : '請先選擇動物！';
+        function updateSelectionUI() {
+            document.getElementById('selectedCount').textContent = `已選擇 ${selectedAnimals.length} 隻動物`;
         }
 
         // 初始化載入
