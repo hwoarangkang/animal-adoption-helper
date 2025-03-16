@@ -1,174 +1,242 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>動物收容所查詢</title>
+    <title>動物認領養小幫手</title>
     <style>
         body {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
             font-family: Arial, sans-serif;
-            margin: 20px;
+        }
+        .filter-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        select, button, input {
+            padding: 12px;
+            border: 2px solid #4CAF50;
+            border-radius: 4px;
+            font-size: 14px;
+            min-width: 120px;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            cursor: pointer;
+            transition: opacity 0.3s;
+        }
+        button:hover {
+            opacity: 0.8;
+        }
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
         }
         .animal-card {
-            border: 1px solid #ccc;
+            border: 2px solid #ddd;
+            border-radius: 8px;
             padding: 10px;
-            margin: 5px 0;
-            cursor: pointer;
             transition: transform 0.2s;
         }
         .animal-card.selected {
-            background-color: #f0f0f0;
+            border-color: #4CAF50;
+            transform: scale(1.02);
         }
-        .animal-card:hover {
-            transform: translateY(-2px);
+        .animal-img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 4px;
         }
-        .search-form {
-            margin-bottom: 20px;
+        .animal-info {
+            margin-top: 10px;
+            font-size: 14px;
+        }
+        #reportOutput {
+            width: 100%;
+            height: 200px;
+            margin-top: 20px;
+            padding: 10px;
+            font-family: monospace;
         }
     </style>
 </head>
 <body>
-    <div class="search-form">
+    <h1>動物認領養小幫手 🐾</h1>
+    
+    <!-- 篩選條件 -->
+    <div class="filter-group">
         <select id="areaSelect">
-            <option value="">所有地區</option>
-            <option value="100">台北市</option>
-            <option value="101">新北市</option>
-            <option value="102">桃園市</option>
-            <option value="103">台中市</option>
-            <option value="104">台南市</option>
-            <option value="105">高雄市</option>
-            <option value="106">基隆市</option>
-            <option value="107">宜蘭縣</option>
-            <option value="108">苗栗縣</option>
-            <option value="109">南投縣</option>
-            <option value="110">彰化縣</option>
-            <option value="111">新竹市</option>
-            <option value="112">嘉義市</option>
+            <option value="">全部地區</option>
+            <option value="2">臺北市</option>
+            <option value="3">新北市</option>
+            <option value="4">基隆市</option>
+            <option value="5">宜蘭縣</option>
+            <option value="6">桃園市</option>
+            <option value="7">新竹縣</option>
+            <option value="8">新竹市</option>
+            <option value="9">苗栗縣</option>
+            <option value="10">臺中市</option>
+            <option value="11">彰化縣</option>
+            <option value="12">南投縣</option>
+            <option value="13">雲林縣</option>
+            <option value="14">嘉義縣</option>
+            <option value="15">嘉義市</option>
+            <option value="16">臺南市</option>
+            <option value="17">高雄市</option>
+            <option value="18">屏東縣</option>
+            <option value="19">花蓮縣</option>
+            <option value="20">臺東縣</option>
+            <option value="21">澎湖縣</option>
+            <option value="22">金門縣</option>
+            <option value="23">連江縣</option>
         </select>
-        
-        <select id="speciesSelect">
-            <option value="">所有品種</option>
-            <option value="貓">貓</option>
-            <option value="狗">狗</option>
-            <option value="兔子">兔子</option>
-            <option value="rats"> крысы</option>
-            <!-- 可以根據實際資料添加更多 -->
+
+        <select id="typeSelect">
+            <option value="">全部類型</option>
+            <option value="狗">狗狗</option>
+            <option value="貓">貓咪</option>
         </select>
 
         <select id="colorSelect">
-            <option value="">所有顏色</option>
-            <option value="black">黑色</option>
-            <option value="white">白色</option>
-            <option value="brown">棕色</option>
-            <option value="gray">灰色</option>
-            <option value="mixed">混色</option>
+            <option value="">全部顏色</option>
+            <option value="黑色">黑色</option>
+            <option value="白色">白色</option>
+            <option value="虎斑">虎斑</option>
+            <option value="棕色">棕色</option>
+            <option value="灰色">灰色</option>
         </select>
 
         <select id="genderSelect">
-            <option value="">所有性別</option>
+            <option value="">全部性別</option>
             <option value="M">男生</option>
             <option value="F">女生</option>
         </select>
 
-        <button onclick="loadAnimals()">搜索</button>
+        <input type="date" id="entryDateSelect" placeholder="入所日期">
+        <input type="time" id="entryTimeSelect" placeholder="入所時間">
+
+        <button onclick="loadAnimals()">搜尋</button>
+        <button onclick="filterOldestAnimals()">篩選入所最久</button>
+        <button onclick="generateReport()">生成報告</button>
     </div>
 
+    <!-- 動物展示區 -->
     <div id="selectedCount">已選擇 0 隻動物</div>
-    <div id="gallery"></div>
-    
-    <div style="margin-top: 20px;">
-        <h3>產生報告:</h3>
-        <textarea id="reportOutput" rows="10" readonly></textarea>
-    </div>
+    <div class="gallery" id="gallery"></div>
+
+    <!-- 報告輸出 -->
+    <textarea id="reportOutput" placeholder="點擊「生成報告」獲取文字內容"></textarea>
 
     <script>
         let allAnimals = [];
         let selectedAnimals = [];
 
-        // 初始化地區下拉選單
-        const areaSelect = document.getElementById('areaSelect');
-        areaSelect.addEventListener('change', loadAnimals);
+        // 加載動物資料
+        async function loadAnimals() {
+            const area = document.getElementById('areaSelect').value;
+            const type = document.getElementById('typeSelect').value;
+            const color = document.getElementById('colorSelect').value;
+            const gender = document.getElementById('genderSelect').value;
+            const entryDate = document.getElementById('entryDateSelect').value;
+            const entryTime = document.getElementById('entryTimeSelect').value;
 
-        // 初始化品種下拉選單
-        const speciesSelect = document.getElementById('speciesSelect');
-        speciesSelect.addEventListener('change', loadAnimals);
+            // 構建API篩選條件
+            let filters = [`animal_status eq 'OPEN'`];
+            if (area) filters.push(`animal_area_pkid eq ${area}`);
+            if (type) filters.push(`animal_kind eq '${type}'`);
+            if (color) filters.push(`animal_colour eq '${color}'`);
+            if (gender) filters.push(`animal_sex eq '${gender}'`);
+            if (entryDate) filters.push(`animal_opendate ge '${entryDate}'`);
+            if (entryTime) filters.push(`animal_opendate ge '${entryDate}T${entryTime}'`);
 
-        // 初始化顏色下拉選單
-        const colorSelect = document.getElementById('colorSelect');
-        colorSelect.addEventListener('change', loadAnimals);
-
-        // 初始化性別下拉選單
-        const genderSelect = document.getElementById('genderSelect');
-        genderSelect.addEventListener('change', loadAnimals);
-
-        function loadAnimals() {
-            const area = areaSelect.value;
-            const species = speciesSelect.value;
-            const color = colorSelect.value;
-            const gender = genderSelect.value;
-
-            fetch(`https://example.com/api/animals?area=${area}&species=${species}&color=${color}&gender=${gender}`)
-                .then(response => response.json())
-                .then(data => {
-                    allAnimals = data;
-                    displayAnimals();
-                })
-                .catch(error => console.error('錯誤:', error));
-        }
-
-        function displayAnimals() {
-            const gallery = document.getElementById('gallery');
-            gallery.innerHTML = '';
-
-            allAnimals.forEach(animal => {
-                const card = document.createElement('div');
-                card.className = `animal-card ${selectedAnimals.includes(animal.id) ? 'selected' : ''}`;
-                card.innerHTML = `
-                    <h4>${animal.name}</h4>
-                    <p>地區: ${animal.area}</p>
-                    <p>品種: ${animal.species}</p>
-                    <p>顏色: ${animal.color}</p>
-                    <p>性別: ${animal.gender}</p>
-                    <p>出生日期: ${animal.birthdate}</p>
-                    <p>入所日期: ${animal.entryDate}</p>
-                `;
-                card.onclick = () => toggleSelect(animal.id);
-                gallery.appendChild(card);
-            });
-        }
-
-        function toggleSelect(id) {
-            const index = selectedAnimals.indexOf(id);
-            if (index === -1) {
-                selectedAnimals.push(id);
-            } else {
-                selectedAnimals.splice(index, 1);
+            try {
+                const response = await fetch(
+                    `https://data.moa.gov.tw/Service/OpenData/TransService.aspx?UnitId=QcbUEzN6E6DL&$filter=${encodeURIComponent(filters.join(' and '))}`
+                );
+                const data = await response.json();
+                allAnimals = data;
+                renderGallery();
+            } catch (error) {
+                console.error('資料加載失敗:', error);
+                alert('無法加載資料，請檢查控制台');
             }
+        }
+
+        // 篩選入所最久的動物
+        function filterOldestAnimals() {
+            if (allAnimals.length === 0) {
+                alert('請先搜尋動物！');
+                return;
+            }
+
+            // 按入所日期排序（舊到新）
+            const sortedAnimals = allAnimals.sort((a, b) => {
+                const dateA = new Date(a.animal_createtime);
+                const dateB = new Date(b.animal_createtime);
+                return dateA - dateB;
+            });
+
+            // 取前 10 筆
+            allAnimals = sortedAnimals.slice(0, 10);
+            renderGallery();
+        }
+
+        // 渲染動物卡片
+        function renderGallery() {
+            const gallery = document.getElementById('gallery');
+            gallery.innerHTML = allAnimals.map(animal => `
+                <div class="animal-card ${selectedAnimals.includes(animal.animal_id) ? 'selected' : ''}" 
+                     onclick="toggleSelection('${animal.animal_id}')">
+                    <img src="${animal.album_file || 'https://via.placeholder.com/200x200?text=無照片'}" 
+                         class="animal-img" 
+                         alt="${animal.animal_Variety}">
+                    <div class="animal-info">
+                        <div>品種：${animal.animal_Variety}</div>
+                        <div>性別：${animal.animal_sex === 'M' ? '男生' : '女生'}</div>
+                        <div>收容所：${animal.shelter_name}</div>
+                        <div>開放日期：${animal.animal_opendate}</div>
+                        <div>入所時間：${animal.animal_createtime}</div>
+                    </div>
+                </div>
+            `).join('');
+            updateSelectionUI();
+        }
+
+        // 選擇功能
+        function toggleSelection(animalId) {
+            const index = selectedAnimals.indexOf(animalId);
+            index === -1 ? selectedAnimals.push(animalId) : selectedAnimals.splice(index, 1);
+            renderGallery();
+        }
+
+        function updateSelectionUI() {
             document.getElementById('selectedCount').textContent = `已選擇 ${selectedAnimals.length} 隻動物`;
         }
 
+        // 生成報告
         function generateReport() {
-            const report = [];
-            allAnimals.forEach(animal => {
-                if (selectedAnimals.includes(animal.id)) {
-                    report.push(`
-                        === 動物報告 ===
-                        名稱: ${animal.name}
-                        地區: ${animal.area}
-                        品種: ${animal.species}
-                        顏色: ${animal.color}
-                        性別: ${animal.gender}
-                        出生日期: ${animal.birthdate}
-                        入所日期: ${animal.entryDate}
-                        ----------------
-                    `);
-                }
-            });
-            const output = document.getElementById('reportOutput');
-            output.value = report.join('\n');
+            const selected = allAnimals.filter(a => selectedAnimals.includes(a.animal_id));
+            const report = selected.map(animal => 
+`【${animal.animal_Variety}】${animal.animal_sex === 'M' ? '男生' : '女生'}
+📍 ${animal.shelter_name}（${animal.shelter_address}）
+📅 開放認養：${animal.animal_opendate}
+⏰ 入所時間：${animal.animal_createtime}
+🖼️ 照片：${animal.album_file || '無照片'}
+───────────────────`
+            ).join('\n\n');
+
+            document.getElementById('reportOutput').value = 
+                selected.length > 0 ? report : '請先選擇動物！';
         }
 
-        // 初始化時載入所有動物資料
+        // 初始化載入
         loadAnimals();
     </script>
 </body>
