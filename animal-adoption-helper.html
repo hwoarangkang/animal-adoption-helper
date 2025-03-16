@@ -16,7 +16,7 @@
             margin-bottom: 20px;
             flex-wrap: wrap;
         }
-        select, button, input {
+        select, button {
             padding: 12px;
             border: 2px solid #4CAF50;
             border-radius: 4px;
@@ -61,6 +61,23 @@
         }
         .animal-info div {
             margin: 5px 0;
+        }
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .pagination button {
+            padding: 8px 12px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .pagination button.active {
+            background: #45a049;
         }
     </style>
 </head>
@@ -116,10 +133,6 @@
             <option value="F">女生</option>
         </select>
 
-        <input type="date" id="entryDateSelect" placeholder="入所日期">
-        <input type="time" id="entryTimeSelect" placeholder="入所時間">
-
-        <button onclick="loadAnimals()">搜尋</button>
         <button onclick="filterOldestAnimals()">篩選入所最久</button>
     </div>
 
@@ -127,9 +140,14 @@
     <div id="selectedCount">已選擇 0 隻動物</div>
     <div class="gallery" id="gallery"></div>
 
+    <!-- 分頁按鈕 -->
+    <div class="pagination" id="pagination"></div>
+
     <script>
         let allAnimals = [];
         let selectedAnimals = [];
+        let currentPage = 1;
+        const itemsPerPage = 100;
 
         // 加載動物資料
         async function loadAnimals() {
@@ -137,8 +155,6 @@
             const type = document.getElementById('typeSelect').value;
             const color = document.getElementById('colorSelect').value;
             const gender = document.getElementById('genderSelect').value;
-            const entryDate = document.getElementById('entryDateSelect').value;
-            const entryTime = document.getElementById('entryTimeSelect').value;
 
             // 構建API篩選條件
             let filters = [`animal_status eq 'OPEN'`];
@@ -146,8 +162,6 @@
             if (type) filters.push(`animal_kind eq '${type}'`);
             if (color) filters.push(`animal_colour eq '${color}'`);
             if (gender) filters.push(`animal_sex eq '${gender}'`);
-            if (entryDate) filters.push(`animal_opendate ge '${entryDate}'`);
-            if (entryTime) filters.push(`animal_opendate ge '${entryDate}T${entryTime}'`);
 
             try {
                 const response = await fetch(
@@ -156,6 +170,7 @@
                 const data = await response.json();
                 allAnimals = data;
                 renderGallery();
+                renderPagination();
             } catch (error) {
                 console.error('資料加載失敗:', error);
                 alert('無法加載資料，請檢查控制台');
@@ -165,32 +180,36 @@
         // 篩選入所最久的動物
         function filterOldestAnimals() {
             if (allAnimals.length === 0) {
-                alert('請先搜尋動物！');
+                alert('請先載入動物資料！');
                 return;
             }
 
             // 按入所日期排序（舊到新）
-            const sortedAnimals = allAnimals.sort((a, b) => {
+            allAnimals.sort((a, b) => {
                 const dateA = new Date(a.animal_createtime);
                 const dateB = new Date(b.animal_createtime);
                 return dateA - dateB;
             });
 
-            // 取前 10 筆
-            allAnimals = sortedAnimals.slice(0, 10);
             renderGallery();
+            renderPagination();
         }
 
         // 渲染動物卡片
         function renderGallery() {
             const gallery = document.getElementById('gallery');
-            gallery.innerHTML = allAnimals.map(animal => `
+            const start = (currentPage - 1) * itemsPerPage;
+            const end = start + itemsPerPage;
+            const animalsToShow = allAnimals.slice(start, end);
+
+            gallery.innerHTML = animalsToShow.map(animal => `
                 <div class="animal-card" 
                      onclick="toggleSelection('${animal.animal_id}')"
                      oncontextmenu="copyAnimalInfo(event, '${animal.animal_id}')">
                     <img src="${animal.album_file || 'https://via.placeholder.com/200x200?text=無照片'}" 
                          class="animal-img" 
-                         alt="${animal.animal_Variety}">
+                         alt="${animal.animal_Variety}"
+                         oncontextmenu="saveImage(event, '${animal.album_file}')">
                     <div class="animal-info">
                         <div>動物編號：${animal.animal_id}</div>
                         <div>收容編號：${animal.animal_subid}</div>
@@ -205,6 +224,25 @@
                 </div>
             `).join('');
             updateSelectionUI();
+        }
+
+        // 分頁按鈕
+        function renderPagination() {
+            const totalPages = Math.ceil(allAnimals.length / itemsPerPage);
+            const pagination = document.getElementById('pagination');
+            pagination.innerHTML = '';
+
+            for (let i = 1; i <= totalPages; i++) {
+                const button = document.createElement('button');
+                button.textContent = i;
+                button.classList.toggle('active', i === currentPage);
+                button.onclick = () => {
+                    currentPage = i;
+                    renderGallery();
+                    renderPagination();
+                };
+                pagination.appendChild(button);
+            }
         }
 
         // 選擇功能
@@ -235,6 +273,17 @@
             navigator.clipboard.writeText(info)
                 .then(() => alert('動物資訊已複製到剪貼簿！'))
                 .catch(() => alert('複製失敗，請手動複製。'));
+        }
+
+        // 右鍵儲存圖片
+        function saveImage(event, imageUrl) {
+            event.preventDefault(); // 防止右鍵選單彈出
+            if (!imageUrl) return;
+
+            const link = document.createElement('a');
+            link.href = imageUrl;
+            link.download = `animal_${Date.now()}.jpg`;
+            link.click();
         }
 
         function updateSelectionUI() {
