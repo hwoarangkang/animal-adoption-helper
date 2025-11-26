@@ -146,7 +146,7 @@
             padding: 0;
         }
 
-        /* 電腦版：左圖右文 (緊湊排版) */
+        /* 電腦版：左圖右文 */
         @media (min-width: 768px) {
             .modal-body {
                 flex-direction: row;
@@ -200,7 +200,7 @@
             border-bottom: 1px dashed #eee;
             padding-bottom: 3px;
         }
-        .info-label { color: #888; width: 90px; flex-shrink: 0; }
+        .info-label { color: #888; width: 85px; flex-shrink: 0; }
         .info-value { font-weight: bold; color: #333; word-break: break-all;}
         
         .full-width { grid-column: 1 / -1; }
@@ -328,13 +328,12 @@
         const itemsPerPage = 24;
         let isSortAscending = true; 
 
-        // 核心：使用您驗證過最穩定的版本 (無自動重試、單純抓取 2000 筆)
+        // 核心邏輯：一次抓 2000 筆 + 本地篩選 (您原本能跑的版本)
         async function fetchAllData() {
             const loadingOverlay = document.getElementById('loadingOverlay');
             loadingOverlay.style.display = 'flex';
             
             try {
-                // 不使用 timestamp，減少快取不一致問題
                 const apiUrl = `https://data.moa.gov.tw/Service/OpenData/TransService.aspx?UnitId=QcbUEzN6E6DL&$filter=animal_status eq 'OPEN'&$top=2000`;
                 const response = await fetch(apiUrl);
                 if (!response.ok) throw new Error('API Error');
@@ -430,8 +429,9 @@
                 let typeTag = '';
                 if (animal.animal_kind === '狗') typeTag = '<span class="tag dog">🐶</span>';
                 else if (animal.animal_kind === '貓') typeTag = '<span class="tag cat">🐱</span>';
-                else typeTag = `<span class="tag other">🐾 ${animal.animal_kind}</span>`;
+                else typeTag = `<span class="tag other">${animal.animal_kind}</span>`;
 
+                // 注意：這裡傳入的 start + index 是為了對應 displayData 的正確索引
                 return `
                 <div class="animal-card" onclick="openModal(${start + index})">
                     <img src="${imgUrl}" class="animal-img" loading="lazy" alt="animal">
@@ -447,7 +447,45 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        // --- Modal 功能 (這裡整合了您要的緊湊排版 + FB 格式修正) ---
+        function renderPagination() {
+            if (displayData.length === 0) return;
+
+            const totalPages = Math.ceil(displayData.length / itemsPerPage);
+            const pagination = document.getElementById('pagination');
+            pagination.innerHTML = '';
+
+            if (totalPages <= 1) return;
+
+            const maxButtons = 5;
+            let startPage = Math.max(1, currentPage - Math.floor(maxButtons / 2));
+            let endPage = Math.min(totalPages, startPage + maxButtons - 1);
+
+            if (endPage - startPage + 1 < maxButtons) {
+                startPage = Math.max(1, endPage - maxButtons + 1);
+            }
+
+            const prevButton = document.createElement('button');
+            prevButton.textContent = '«';
+            prevButton.disabled = currentPage === 1;
+            prevButton.onclick = () => { if(currentPage > 1) { currentPage--; renderGallery(); renderPagination(); } };
+            pagination.appendChild(prevButton);
+
+            for (let i = startPage; i <= endPage; i++) {
+                const button = document.createElement('button');
+                button.textContent = i;
+                button.className = i === currentPage ? 'active' : '';
+                button.onclick = () => { currentPage = i; renderGallery(); renderPagination(); };
+                pagination.appendChild(button);
+            }
+
+            const nextButton = document.createElement('button');
+            nextButton.textContent = '»';
+            nextButton.disabled = currentPage === totalPages;
+            nextButton.onclick = () => { if(currentPage < totalPages) { currentPage++; renderGallery(); renderPagination(); } };
+            pagination.appendChild(nextButton);
+        }
+
+        // --- 彈出視窗 (緊湊排版 + 完整資訊) ---
         function openModal(index) {
             const animal = displayData[index];
             if (!animal) return;
@@ -456,42 +494,29 @@
             let imgUrl = animal.album_file || '';
             if (imgUrl.startsWith('http:')) imgUrl = imgUrl.replace('http:', 'https:');
             
-            // 稱呼邏輯
             const sibling = animal.animal_sex === 'M' ? '弟弟' : (animal.animal_sex === 'F' ? '妹妹' : '毛孩');
             const sexText = animal.animal_sex === 'M' ? '男生' : (animal.animal_sex === 'F' ? '女生' : '未標示');
             
-            // 去除品種欄位的空白
-            const variety = animal.animal_Variety ? animal.animal_Variety.trim() : '米克斯';
-            const place = animal.animal_place || animal.shelter_name;
-
-            // 修正後的 FB 文案
-            const fbText = `【認養文】求分享 🏠\n這隻可愛的${variety}${sibling}已經在${place}等家 ${days} 天了！\n\n🐾 收容編號：${animal.animal_subid}\n🐾 性別：${sexText}\n🐾 毛色：${animal.animal_colour}\n🐾 認養日期：${animal.animal_opendate} 後\n🐾 來源行政區：${animal.animal_foundplace}\n🐾 公告收容所：${place}\n🐾 地點：${animal.shelter_address || '請洽收容所'}\n🐾 電話：${animal.shelter_tel}\n\n#領養代替購買 #動物認養`;
+            const fbText = `【認養文】求分享 🏠\n這隻可愛的${animal.animal_Variety}${sibling}已經在${animal.animal_place || animal.shelter_name}等家 ${days} 天了！\n\n🐾 編號：${animal.animal_id}\n🐾 性別：${sexText}\n🐾 毛色：${animal.animal_colour}\n🐾 地點：${animal.shelter_address || animal.shelter_name}\n🐾 電話：${animal.shelter_tel}\n\n#領養代替購買 #動物認養`;
 
             const modalBody = document.getElementById('modalBody');
             
-            // 緊湊版 HTML 結構
             modalBody.innerHTML = `
                 <div class="modal-left">
                     <img src="${imgUrl || 'https://via.placeholder.com/400x300'}" class="modal-img">
                 </div>
                 <div class="modal-right">
                     <div>
-                        <div class="modal-title">${place}</div>
+                        <div class="modal-title">${animal.animal_place || animal.shelter_name}</div>
                         <div class="info-grid">
-                            <div class="info-item full-width">
-                                <span class="info-label">開放認養</span>
-                                <span class="info-value" style="color:#2e7d32">適合認養 ( ${animal.animal_opendate} )</span>
-                            </div>
+                            <div class="info-item full-width"><span class="info-label">開放認養</span><span class="info-value" style="color:#2e7d32">適合認養 ( ${animal.animal_opendate} )</span></div>
                             <div class="info-item"><span class="info-label">收容編號</span><span class="info-value">${animal.animal_subid || animal.animal_id}</span></div>
-                            <div class="info-item"><span class="info-label">入所日期</span><span class="info-value">${animal.animal_createtime}</span></div>
                             <div class="info-item"><span class="info-label">入所天數</span><span class="info-value" style="color:#d32f2f">${days} 天</span></div>
-                            <div class="info-item"><span class="info-label">來源行政區</span><span class="info-value">${animal.animal_foundplace}</span></div>
-                            <div class="info-item"><span class="info-label">公告收容所</span><span class="info-value">${place}</span></div>
-                            <div class="info-item"><span class="info-label">品種</span><span class="info-value">${variety}</span></div>
+                            <div class="info-item"><span class="info-label">品種</span><span class="info-value">${animal.animal_Variety}</span></div>
                             <div class="info-item"><span class="info-label">性別</span><span class="info-value">${sexText}</span></div>
                             <div class="info-item"><span class="info-label">毛色</span><span class="info-value">${animal.animal_colour}</span></div>
                             <div class="info-item"><span class="info-label">電話</span><span class="info-value">${animal.shelter_tel}</span></div>
-                            <div class="info-item full-width"><span class="info-label">地點</span><span class="info-value">${animal.shelter_address || '請洽收容所'}</span></div>
+                            <div class="info-item full-width"><span class="info-label">地址</span><span class="info-value">${animal.shelter_address || '請洽收容所'}</span></div>
                             ${animal.animal_remark ? `<div class="info-item full-width"><span class="info-label">備註</span><span class="info-value" style="color:#666;font-weight:normal">${animal.animal_remark}</span></div>` : ''}
                         </div>
                     </div>
@@ -523,7 +548,7 @@
 
         function copyToClipboard(text) {
             navigator.clipboard.writeText(text).then(() => {
-                alert('✅ 認養文已複製！\n\n記得按「開啟原始圖」來下載照片喔！');
+                alert('✅ 認養文已複製！');
             }).catch(err => {
                 alert('複製失敗，請手動複製。');
             });
