@@ -23,7 +23,7 @@
             text-shadow: 1px 1px 3px rgba(0,0,0,0.1);
         }
         
-        /* --- 篩選區塊 --- */
+        /* 篩選區塊 */
         .filter-group {
             display: flex;
             gap: 10px;
@@ -57,7 +57,7 @@
         button.sort-btn:hover { background: #43a047; transform: translateY(-1px); }
         button.sort-btn.active { background: #2e7d32; }
 
-        /* --- 卡片網格 --- */
+        /* 卡片網格 */
         .gallery {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
@@ -86,7 +86,6 @@
         }
         .animal-info { padding: 12px; }
         
-        /* 標籤樣式 */
         .tag-row { display: flex; gap: 6px; margin-bottom: 6px; }
         .tag { padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; }
         .tag.dog { background: #fff3e0; color: #ef6c00; }
@@ -101,7 +100,7 @@
         }
         .days-count { color: #d32f2f; font-weight: bold; font-size: 12px; margin-top: 6px; }
 
-        /* --- 彈出視窗 (緊湊版) --- */
+        /* --- 彈出視窗 (緊湊版樣式) --- */
         .modal-overlay {
             display: none;
             position: fixed;
@@ -202,7 +201,6 @@
         }
         .info-label { color: #888; width: 90px; flex-shrink: 0; }
         .info-value { font-weight: bold; color: #333; word-break: break-all;}
-        
         .full-width { grid-column: 1 / -1; }
 
         .btn-group {
@@ -223,7 +221,7 @@
         .btn-img { background: #FF9800; }
         .tip-text { text-align: center; font-size: 11px; color: #999; margin-top: 5px; }
 
-        /* --- 分頁與讀取 --- */
+        /* 分頁與讀取 */
         .pagination { display: flex; justify-content: center; gap: 5px; margin-top: 30px; padding-bottom: 30px; }
         .pagination button { min-width: 35px; background: white; color: #333; padding: 5px 10px; }
         .pagination button.active { background: #4CAF50; color: white; border-color: #4CAF50; }
@@ -328,7 +326,7 @@
         const itemsPerPage = 24;
         let isSortAscending = true; 
 
-        // 核心邏輯：一次抓 2000 筆 + 本地篩選 (您驗證過最穩定的版本)
+        // ⚠️ 核心邏輯：完全保留您驗證過能連線的版本 (無重試、無 timestamp)
         async function fetchAllData() {
             const loadingOverlay = document.getElementById('loadingOverlay');
             loadingOverlay.style.display = 'flex';
@@ -427,10 +425,11 @@
                 const genderTag = animal.animal_sex === 'M' ? '<span class="tag male">♂ 男生</span>' : (animal.animal_sex === 'F' ? '<span class="tag female">♀ 女生</span>' : '');
                 
                 let typeTag = '';
-                if (animal.animal_kind === '狗') typeTag = '<span class="tag dog">🐶</span>';
-                else if (animal.animal_kind === '貓') typeTag = '<span class="tag cat">🐱</span>';
-                else typeTag = `<span class="tag other">${animal.animal_kind}</span>`;
+                if (animal.animal_kind === '狗') typeTag = '<span class="tag dog">🐶 狗狗</span>';
+                else if (animal.animal_kind === '貓') typeTag = '<span class="tag cat">🐱 貓咪</span>';
+                else typeTag = `<span class="tag other">🐾 ${animal.animal_kind}</span>`;
 
+                // 注意：這裡傳入的 start + index 是為了對應 displayData 的正確索引
                 return `
                 <div class="animal-card" onclick="openModal(${start + index})">
                     <img src="${imgUrl}" class="animal-img" loading="lazy" alt="animal">
@@ -446,7 +445,7 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        // --- Modal 功能 (已修正 FB 文案格式) ---
+        // --- Modal 功能 (更新：緊湊排版 + 您指定的 FB 格式) ---
         function openModal(index) {
             const animal = displayData[index];
             if (!animal) return;
@@ -455,7 +454,7 @@
             let imgUrl = animal.album_file || '';
             if (imgUrl.startsWith('http:')) imgUrl = imgUrl.replace('http:', 'https:');
             
-            // 稱呼與性別邏輯
+            // 稱呼邏輯
             const sibling = animal.animal_sex === 'M' ? '弟弟' : (animal.animal_sex === 'F' ? '妹妹' : '毛孩');
             const sexText = animal.animal_sex === 'M' ? '男生' : (animal.animal_sex === 'F' ? '女生' : '未標示');
             
@@ -463,11 +462,12 @@
             const variety = animal.animal_Variety ? animal.animal_Variety.trim() : '米克斯';
             const place = animal.animal_place || animal.shelter_name;
 
-            // 構建 FB 貼文 (依據您的最新要求格式)
+            // FB 文案：完全依照您的範本 (移除來源行政區/公告收容所)
             const fbText = `【認養文】求分享 🏠\n這隻可愛的${variety}${sibling}已經在${place}等家 ${days} 天了！\n\n🐾 收容編號：${animal.animal_subid}\n🐾 性別：${sexText}\n🐾 毛色：${animal.animal_colour}\n🐾 認養日期：${animal.animal_opendate} 後\n🐾 地點：${animal.shelter_address || '請洽收容所'}\n🐾 電話：${animal.shelter_tel}\n\n#領養代替購買 #動物認養`;
 
             const modalBody = document.getElementById('modalBody');
             
+            // 緊湊版 HTML 結構 (包含詳細資料)
             modalBody.innerHTML = `
                 <div class="modal-left">
                     <img src="${imgUrl || 'https://via.placeholder.com/400x300'}" class="modal-img">
@@ -489,7 +489,7 @@
                             <div class="info-item"><span class="info-label">性別</span><span class="info-value">${sexText}</span></div>
                             <div class="info-item"><span class="info-label">毛色</span><span class="info-value">${animal.animal_colour}</span></div>
                             <div class="info-item"><span class="info-label">電話</span><span class="info-value">${animal.shelter_tel}</span></div>
-                            <div class="info-item full-width"><span class="info-label">地址</span><span class="info-value">${animal.shelter_address || '請洽收容所'}</span></div>
+                            <div class="info-item full-width"><span class="info-label">地點</span><span class="info-value">${animal.shelter_address || '請洽收容所'}</span></div>
                             ${animal.animal_remark ? `<div class="info-item full-width"><span class="info-label">備註</span><span class="info-value" style="color:#666;font-weight:normal">${animal.animal_remark}</span></div>` : ''}
                         </div>
                     </div>
