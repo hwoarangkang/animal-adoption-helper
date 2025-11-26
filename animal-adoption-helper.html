@@ -4,155 +4,259 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>動物認領養小幫手</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🐶</text></svg>">
+    
     <style>
         body {
             max-width: 1200px;
             margin: 20px auto;
             padding: 20px;
             font-family: "Microsoft JhengHei", "Heiti TC", sans-serif;
-            background-color: #f5f5f5;
+            background-color: #f5f7fa;
+            color: #333;
         }
         h1 {
             text-align: center;
-            color: #333;
+            color: #2c3e50;
             margin-bottom: 30px;
+            font-size: 2.2rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
         }
+        /* 篩選區塊樣式 */
         .filter-group {
             display: flex;
-            gap: 15px;
+            gap: 12px;
             margin-bottom: 25px;
             flex-wrap: wrap;
             background: #fff;
             padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
             justify-content: center;
+            align-items: center;
         }
         select, button {
             padding: 12px 16px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
+            border: 1px solid #e1e4e8;
+            border-radius: 10px;
             font-size: 15px;
             min-width: 130px;
             background-color: white;
+            transition: all 0.3s ease;
         }
         select:focus {
             border-color: #4CAF50;
             outline: none;
+            box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
         }
-        button {
+        /* 按鈕特製樣式 */
+        button.sort-btn {
             background: #4CAF50;
             color: white;
             border: none;
             cursor: pointer;
-            transition: all 0.2s;
             font-weight: bold;
-            box-shadow: 0 2px 5px rgba(76, 175, 80, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
         }
-        button:hover {
+        button.sort-btn:hover {
             background: #43a047;
             transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.2);
         }
+        button.sort-btn.active {
+            background: #2e7d32;
+        }
+
+        /* 卡片網格 */
         .gallery {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
             gap: 25px;
             margin-top: 20px;
         }
         .animal-card {
-            border: none;
-            border-radius: 12px;
-            padding: 0;
-            transition: transform 0.3s, box-shadow 0.3s;
-            cursor: pointer;
-            overflow: hidden;
             background: white;
-            box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+            cursor: pointer;
             position: relative;
+            border: 1px solid transparent;
         }
         .animal-card:hover {
             transform: translateY(-8px);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+            border-color: #4CAF50;
         }
         .animal-img {
             width: 100%;
-            height: 220px;
+            height: 200px;
             object-fit: cover;
-            background-color: #eee;
-            transition: opacity 0.3s;
+            background-color: #f0f0f0;
         }
         .animal-info {
-            padding: 18px;
-            font-size: 14px;
-            line-height: 1.6;
-            color: #444;
+            padding: 15px;
         }
-        .animal-info .tag-container {
+        .tag-row {
             display: flex;
             gap: 8px;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
         }
-        .animal-info .tag {
-            background: #e8f5e9;
-            color: #2e7d32;
+        .tag {
             padding: 4px 10px;
             border-radius: 20px;
             font-size: 12px;
             font-weight: bold;
         }
-        .animal-info .tag.gender-m { background: #e3f2fd; color: #1565c0; }
-        .animal-info .tag.gender-f { background: #fce4ec; color: #c2185b; }
+        .tag.dog { background: #fff3e0; color: #ef6c00; }
+        .tag.cat { background: #f3e5f5; color: #8e24aa; }
+        .tag.male { background: #e3f2fd; color: #1976d2; }
+        .tag.female { background: #fce4ec; color: #c2185b; }
         
         .shelter-name {
+            font-size: 15px;
             font-weight: bold;
-            font-size: 16px;
-            margin-bottom: 6px;
-            color: #222;
+            color: #2c3e50;
+            margin-bottom: 5px;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
+        .days-count {
+            color: #d32f2f;
+            font-weight: bold;
+            font-size: 13px;
+            margin-top: 8px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* 彈出視窗 (Modal) */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(5px);
+        }
+        .modal-content {
+            background: white;
+            width: 90%;
+            max-width: 600px;
+            border-radius: 20px;
+            padding: 25px;
+            position: relative;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: slideUp 0.3s ease;
+        }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         
+        .close-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 24px;
+            cursor: pointer;
+            color: #666;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background: #f5f5f5;
+        }
+        .close-btn:hover { background: #e0e0e0; }
+
+        .modal-body {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .modal-img {
+            width: 100%;
+            max-height: 350px;
+            object-fit: contain;
+            border-radius: 12px;
+            background: #f0f0f0;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 12px;
+        }
+        .info-item {
+            font-size: 14px;
+        }
+        .info-label { color: #666; font-size: 12px; margin-bottom: 2px; }
+        .info-value { font-weight: bold; color: #333; }
+
+        .action-btn {
+            background: #1877F2;
+            color: white;
+            text-align: center;
+            padding: 15px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 10px;
+            border: none;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .action-btn:hover { background: #166fe5; }
+
+        /* 分頁 */
         .pagination {
             display: flex;
             justify-content: center;
             gap: 8px;
             margin-top: 40px;
-            flex-wrap: wrap;
             padding-bottom: 40px;
         }
         .pagination button {
-            min-width: 45px;
-            padding: 8px 15px;
+            min-width: 40px;
             background: white;
             color: #333;
-            border: 1px solid #ddd;
-            box-shadow: none;
         }
         .pagination button.active {
             background: #4CAF50;
             color: white;
             border-color: #4CAF50;
         }
-        .pagination button:hover:not(.active):not(:disabled) {
-            background: #f1f1f1;
-            transform: none;
-        }
+
+        /* 讀取動畫 */
         .loading-overlay {
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(255,255,255,0.8);
+            background: rgba(255,255,255,0.9);
             display: flex;
             justify-content: center;
             align-items: center;
-            z-index: 1000;
+            z-index: 2000;
             flex-direction: column;
         }
         .spinner {
-            width: 50px;
-            height: 50px;
-            border: 5px solid #f3f3f3;
-            border-top: 5px solid #4CAF50;
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #4CAF50;
             border-radius: 50%;
             animation: spin 1s linear infinite;
             margin-bottom: 15px;
@@ -166,7 +270,7 @@
     </style>
 </head>
 <body>
-    <h1>🐾 動物認領養小幫手</h1>
+    <h1>🐶 動物認領養小幫手</h1>
     
     <div class="filter-group">
         <select id="areaSelect" onchange="applyFilters()">
@@ -196,7 +300,7 @@
         </select>
 
         <select id="typeSelect" onchange="applyFilters()">
-            <option value="">🐶 全部類型</option>
+            <option value="">🐾 全部類型</option>
             <option value="狗">狗狗</option>
             <option value="貓">貓咪</option>
         </select>
@@ -218,89 +322,113 @@
             <option value="F">女生</option>
         </select>
 
-        <button onclick="sortOldest()">⏳ 篩選入所最久</button>
+        <button id="sortBtn" class="sort-btn" onclick="toggleSort()">
+            ⏳ 排序：入所時間 (最久先)
+        </button>
     </div>
 
     <div class="loading-overlay" id="loadingOverlay">
         <div class="spinner"></div>
-        <div id="loadingText">正在尋找毛小孩...</div>
+        <div style="font-weight:bold; color:#555;">正在搜尋等待家的毛孩...</div>
     </div>
 
     <div class="gallery" id="gallery"></div>
     <div class="pagination" id="pagination"></div>
 
+    <div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+        <div class="modal-content">
+            <div class="close-btn" onclick="closeModal('force')">×</div>
+            <div class="modal-body" id="modalBody">
+                </div>
+        </div>
+    </div>
+
     <script>
-        let rawData = [];      // 存放從 API 抓回來的原始資料
-        let displayData = [];  // 存放經過篩選後要顯示的資料
+        let rawData = [];
+        let displayData = [];
         let currentPage = 1;
         const itemsPerPage = 24;
+        let isSortAscending = true; // true = 舊到新 (最久先), false = 新到舊
 
-        // 初始化：一進來就抓取大量資料
+        // 啟動：抓取資料
         async function fetchAllData() {
             const loadingOverlay = document.getElementById('loadingOverlay');
             loadingOverlay.style.display = 'flex';
             
             try {
-                // 策略：一次抓取 2000 筆 "開放認養(OPEN)" 的資料，不分地區
-                // 這樣我們就可以在本地端自由篩選，不受 API 限制
+                // 抓取 2000 筆資料
                 const apiUrl = `https://data.moa.gov.tw/Service/OpenData/TransService.aspx?UnitId=QcbUEzN6E6DL&$filter=animal_status eq 'OPEN'&$top=2000`;
-                
                 const response = await fetch(apiUrl);
-                if (!response.ok) throw new Error('網路回應異常');
+                if (!response.ok) throw new Error('API Error');
                 
                 rawData = await response.json();
-                
-                // 初始顯示
-                applyFilters();
+                applyFilters(); // 初始篩選
                 
             } catch (error) {
-                console.error('資料抓取失敗:', error);
-                document.getElementById('gallery').innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #666;">⚠️ 資料載入失敗，請檢查網路或稍後再試。<br>政府資料庫可能暫時無法連線。</div>';
+                console.error(error);
+                document.getElementById('gallery').innerHTML = '<div style="text-align:center; grid-column:1/-1; padding:30px;">⚠️ 無法連線至資料庫，請稍後再試。</div>';
             } finally {
                 loadingOverlay.style.display = 'none';
             }
         }
 
-        // 核心功能：本地篩選
+        // 篩選邏輯
         function applyFilters() {
             const area = document.getElementById('areaSelect').value;
             const type = document.getElementById('typeSelect').value;
             const color = document.getElementById('colorSelect').value;
             const gender = document.getElementById('genderSelect').value;
 
-            // 使用 JavaScript 的 filter 功能，比 API 更穩定
             displayData = rawData.filter(animal => {
-                // 地區篩選 (注意：API 回傳的可能是數字或字串，這裡用 == 比較安全)
                 if (area && animal.animal_area_pkid != area) return false;
-                // 類型篩選
                 if (type && animal.animal_kind !== type) return false;
-                // 顏色篩選
                 if (color && animal.animal_colour !== color) return false;
-                // 性別篩選
                 if (gender && animal.animal_sex !== gender) return false;
-                
                 return true;
             });
 
+            executeSort(); // 篩選後執行排序
+        }
+
+        // 切換排序模式
+        function toggleSort() {
+            isSortAscending = !isSortAscending;
+            const btn = document.getElementById('sortBtn');
+            if (isSortAscending) {
+                btn.innerHTML = '⏳ 排序：入所時間 (最久先)';
+                btn.classList.add('active');
+            } else {
+                btn.innerHTML = '🆕 排序：入所時間 (最新先)';
+                btn.classList.remove('active');
+            }
+            executeSort();
+        }
+
+        // 執行排序
+        function executeSort() {
+            displayData.sort((a, b) => {
+                const dateA = new Date(a.animal_createtime);
+                const dateB = new Date(b.animal_createtime);
+                return isSortAscending ? dateA - dateB : dateB - dateA;
+            });
             currentPage = 1;
             renderGallery();
             renderPagination();
         }
 
-        // 排序：入所最久
-        function sortOldest() {
-            displayData.sort((a, b) => new Date(a.animal_createtime) - new Date(b.animal_createtime));
-            currentPage = 1;
-            renderGallery();
-            renderPagination();
+        // 計算天數
+        function calculateDays(dateString) {
+            const start = new Date(dateString);
+            const now = new Date();
+            const diff = now - start;
+            return Math.floor(diff / (1000 * 60 * 60 * 24));
         }
 
-        // 渲染畫面
+        // 渲染卡片
         function renderGallery() {
             const gallery = document.getElementById('gallery');
-            
             if (displayData.length === 0) {
-                gallery.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #666; font-size: 18px;">🐕 找不到符合條件的毛小孩，試試看放寬條件吧！</div>';
+                gallery.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #888; font-size: 18px;">🐕 找不到符合條件的毛小孩，試試看放寬條件吧！</div>';
                 return;
             }
 
@@ -308,43 +436,33 @@
             const end = start + itemsPerPage;
             const animalsToShow = displayData.slice(start, end);
 
-            gallery.innerHTML = animalsToShow.map(animal => {
-                // 圖片網址處理
+            gallery.innerHTML = animalsToShow.map((animal, index) => {
                 let imgUrl = animal.album_file || '';
-                if (imgUrl && imgUrl.startsWith('http:')) {
-                    imgUrl = imgUrl.replace('http:', 'https:');
-                }
+                if (imgUrl.startsWith('http:')) imgUrl = imgUrl.replace('http:', 'https:');
                 if (!imgUrl) imgUrl = 'https://via.placeholder.com/300x220?text=無照片';
 
-                // 性別顯示
-                const isMale = animal.animal_sex === 'M';
-                const isFemale = animal.animal_sex === 'F';
-                const sexText = isMale ? '♂ 男生' : (isFemale ? '♀ 女生' : '❓ 未標示');
-                const sexClass = isMale ? 'gender-m' : (isFemale ? 'gender-f' : '');
+                const days = calculateDays(animal.animal_createtime);
+                const genderTag = animal.animal_sex === 'M' ? '<span class="tag male">♂ 男生</span>' : (animal.animal_sex === 'F' ? '<span class="tag female">♀ 女生</span>' : '');
+                const typeTag = animal.animal_kind === '狗' ? '<span class="tag dog">🐶 狗狗</span>' : '<span class="tag cat">🐱 貓咪</span>';
 
-                // 修正連結：改為全國動物收容系統公開網址
-                const detailLink = `https://www.pet.gov.tw/Web/Detail.aspx?ID=${animal.animal_id}`;
-
+                // 將資料存入 dataset 方便 Modal 讀取，避免傳遞複雜參數
+                // 注意：這裡使用 data-index 來對應當前頁面的陣列
                 return `
-                <div class="animal-card" onclick="window.open('${detailLink}', '_blank')">
-                    <img src="${imgUrl}" class="animal-img" loading="lazy" alt="${animal.animal_Variety}" onerror="this.src='https://via.placeholder.com/300x220?text=圖片失效'">
+                <div class="animal-card" onclick="openModal(${start + index})">
+                    <img src="${imgUrl}" class="animal-img" loading="lazy" alt="animal">
                     <div class="animal-info">
-                        <div class="tag-container">
-                            <span class="tag">${animal.animal_kind}</span>
-                            <span class="tag ${sexClass}">${sexText}</span>
-                        </div>
-                        <div class="shelter-name" title="${animal.animal_place || animal.shelter_name}">${animal.animal_place || animal.shelter_name}</div>
-                        <div style="color: #666; font-size: 13px; margin-bottom: 4px;">品種：${animal.animal_Variety} / ${animal.animal_colour}</div>
-                        <div style="color: #999; font-size: 12px;">入所日期：${animal.animal_createtime}</div>
+                        <div class="tag-row">${typeTag} ${genderTag}</div>
+                        <div class="shelter-name">${animal.animal_place || animal.shelter_name}</div>
+                        <div style="font-size:13px; color:#666;">${animal.animal_Variety} / ${animal.animal_colour}</div>
+                        <div class="days-count">🕒 已等待 ${days} 天</div>
                     </div>
                 </div>
             `}).join('');
             
-            // 每次渲染後滾動到頂部
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        // 分頁功能
+        // 分頁渲染
         function renderPagination() {
             const totalPages = Math.ceil(displayData.length / itemsPerPage);
             const pagination = document.getElementById('pagination');
@@ -384,7 +502,62 @@
             pagination.appendChild(nextButton);
         }
 
-        // 啟動程式
+        // --- 彈出視窗相關功能 ---
+
+        function openModal(index) {
+            const animal = displayData[index];
+            if (!animal) return;
+
+            const days = calculateDays(animal.animal_createtime);
+            let imgUrl = animal.album_file || '';
+            if (imgUrl.startsWith('http:')) imgUrl = imgUrl.replace('http:', 'https:');
+            
+            const modalBody = document.getElementById('modalBody');
+            
+            // 構建 FB 貼文內容
+            const fbText = `【認養文】求分享 🏠\n這隻可愛的 ${animal.animal_Variety} 已經在 ${animal.shelter_name} 等家 ${days} 天了！\n\n🐾 編號：${animal.animal_id}\n🐾 性別：${animal.animal_sex === 'M' ? '男生' : '女生'}\n🐾 毛色：${animal.animal_colour}\n🐾 地點：${animal.shelter_address || animal.shelter_name}\n🐾 電話：${animal.shelter_tel}\n\n#領養代替購買 #動物認養`;
+
+            modalBody.innerHTML = `
+                <img src="${imgUrl || 'https://via.placeholder.com/400x300'}" class="modal-img">
+                <div style="font-size: 1.2rem; font-weight: bold; margin: 5px 0;">${animal.animal_place || animal.shelter_name}</div>
+                <div class="info-grid">
+                    <div class="info-item"><div class="info-label">收容編號</div><div class="info-value">${animal.animal_subid || animal.animal_id}</div></div>
+                    <div class="info-item"><div class="info-label">入所天數</div><div class="info-value" style="color:#d32f2f">${days} 天</div></div>
+                    <div class="info-item"><div class="info-label">品種</div><div class="info-value">${animal.animal_Variety}</div></div>
+                    <div class="info-item"><div class="info-label">性別</div><div class="info-value">${animal.animal_sex === 'M' ? '男生' : '女生'}</div></div>
+                    <div class="info-item"><div class="info-label">毛色</div><div class="info-value">${animal.animal_colour}</div></div>
+                    <div class="info-item"><div class="info-label">體型</div><div class="info-value">${animal.animal_bodytype === 'MINI' ? '小型' : (animal.animal_bodytype === 'MEDIUM' ? '中型' : '大型')}</div></div>
+                    <div class="info-item"><div class="info-label">聯絡電話</div><div class="info-value">${animal.shelter_tel}</div></div>
+                    <div class="info-item" style="grid-column: 1/-1"><div class="info-label">地址</div><div class="info-value">${animal.shelter_address || '請洽收容所'}</div></div>
+                    ${animal.animal_remark ? `<div class="info-item" style="grid-column: 1/-1"><div class="info-label">備註</div><div class="info-value">${animal.animal_remark}</div></div>` : ''}
+                </div>
+                
+                <button class="action-btn" onclick="copyToClipboard(\`${fbText.replace(/`/g, '\\`')}\`)">
+                    📋 複製 FB 貼文內容 (含照片連結)
+                </button>
+            `;
+
+            document.getElementById('modalOverlay').style.display = 'flex';
+            document.body.style.overflow = 'hidden'; // 防止背景滾動
+        }
+
+        function closeModal(event) {
+            if (event === 'force' || event.target.id === 'modalOverlay') {
+                document.getElementById('modalOverlay').style.display = 'none';
+                document.body.style.overflow = 'auto';
+            }
+        }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert('內容已複製！\n現在您可以到 Facebook 貼上發文並附上照片囉！🐶');
+            }).catch(err => {
+                console.error('複製失敗', err);
+                alert('複製失敗，請手動複製。');
+            });
+        }
+
+        // 初始化
         fetchAllData();
     </script>
 </body>
