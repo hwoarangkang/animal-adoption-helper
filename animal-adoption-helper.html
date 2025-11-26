@@ -100,7 +100,7 @@
         }
         .days-count { color: #d32f2f; font-weight: bold; font-size: 12px; margin-top: 6px; }
 
-        /* 彈出視窗 (緊湊版樣式) */
+        /* 彈出視窗 */
         .modal-overlay {
             display: none;
             position: fixed;
@@ -145,7 +145,7 @@
             padding: 0;
         }
 
-        /* 電腦版：左圖右文 */
+        /* 左圖右文 */
         @media (min-width: 768px) {
             .modal-body {
                 flex-direction: row;
@@ -173,7 +173,7 @@
             }
         }
 
-        /* 手機版：緊湊上下 */
+        /* 手機版 */
         @media (max-width: 767px) {
             .modal-body { flex-direction: column; }
             .modal-left { width: 100%; height: 250px; background: #000; }
@@ -200,7 +200,7 @@
             padding-bottom: 3px;
         }
         .info-label { color: #888; width: 90px; flex-shrink: 0; }
-        .info-value { font-weight: bold; color: #333; word-break: break-all;}
+        .info-value { font-weight: bold; color: #333; word-break: break-word;} /* 允許長文字換行 */
         .full-width { grid-column: 1 / -1; }
 
         .btn-group {
@@ -219,7 +219,7 @@
             transition: all 0.2s;
         }
         .btn-copy { background: #1877F2; }
-        .btn-copy.success { background: #4CAF50; pointer-events: none; }
+        .btn-copy.success { background: #4CAF50; pointer-events: none; } /* 複製成功樣式 */
         .btn-img { background: #FF9800; }
         .tip-text { text-align: center; font-size: 11px; color: #999; margin-top: 5px; }
 
@@ -328,8 +328,7 @@
         const itemsPerPage = 24;
         let isSortAscending = true; 
 
-        // ⚠️ 核心邏輯：完全保留您驗證過能連線的版本 (無重試、無 timestamp)
-        // 這段程式碼跟您貼給我的是一模一樣的
+        // ⚠️ 核心邏輯：保持最穩定的版本 (一次抓 2000 筆)
         async function fetchAllData() {
             const loadingOverlay = document.getElementById('loadingOverlay');
             loadingOverlay.style.display = 'flex';
@@ -406,7 +405,7 @@
             return Math.floor(diff / (1000 * 60 * 60 * 24));
         }
 
-        // 新增：計算詳細時間 (年月日) - 修正格式
+        // 新增：計算詳細時間 (年/月/日)
         function getDetailedDuration(dateString) {
             const start = new Date(dateString);
             const now = new Date();
@@ -416,6 +415,7 @@
 
             if (days < 0) {
                 months--;
+                // 計算上個月有幾天
                 const prevMonth = new Date(now.getFullYear(), now.getMonth(), 0);
                 days += prevMonth.getDate();
             }
@@ -425,11 +425,11 @@
             }
 
             let result = "";
-            if (years > 0) result += `${years}年`;
-            if (months > 0) result += `${months}個月`;
-            if (days > 0) result += `${days}天`;
+            if (years > 0) result += `${years} 年 `;
+            if (months > 0) result += `${months} 個月 `;
+            if (days > 0) result += `${days} 天`;
             
-            return result || "不到1天";
+            return result || "不到 1 天";
         }
 
         function renderGallery() {
@@ -473,34 +473,71 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        // --- Modal 功能 (緊湊版 + 完美文案) ---
+        function renderPagination() {
+            if (displayData.length === 0) return;
+
+            const totalPages = Math.ceil(displayData.length / itemsPerPage);
+            const pagination = document.getElementById('pagination');
+            pagination.innerHTML = '';
+
+            if (totalPages <= 1) return;
+
+            const maxButtons = 5;
+            let startPage = Math.max(1, currentPage - Math.floor(maxButtons / 2));
+            let endPage = Math.min(totalPages, startPage + maxButtons - 1);
+
+            if (endPage - startPage + 1 < maxButtons) {
+                startPage = Math.max(1, endPage - maxButtons + 1);
+            }
+
+            const prevButton = document.createElement('button');
+            prevButton.textContent = '«';
+            prevButton.disabled = currentPage === 1;
+            prevButton.onclick = () => { if(currentPage > 1) { currentPage--; renderGallery(); renderPagination(); } };
+            pagination.appendChild(prevButton);
+
+            for (let i = startPage; i <= endPage; i++) {
+                const button = document.createElement('button');
+                button.textContent = i;
+                button.className = i === currentPage ? 'active' : '';
+                button.onclick = () => { currentPage = i; renderGallery(); renderPagination(); };
+                pagination.appendChild(button);
+            }
+
+            const nextButton = document.createElement('button');
+            nextButton.textContent = '»';
+            nextButton.disabled = currentPage === totalPages;
+            nextButton.onclick = () => { if(currentPage < totalPages) { currentPage++; renderGallery(); renderPagination(); } };
+            pagination.appendChild(nextButton);
+        }
+
+        // --- Modal 功能 (整合所有新需求) ---
         function openModal(index) {
             const animal = displayData[index];
             if (!animal) return;
 
             const days = calculateDays(animal.animal_createtime);
-            const durationText = getDetailedDuration(animal.animal_createtime);
+            const durationText = getDetailedDuration(animal.animal_createtime); // 換算年月日
             
             let imgUrl = animal.album_file || '';
             if (imgUrl.startsWith('http:')) imgUrl = imgUrl.replace('http:', 'https:');
             
-            // 稱呼與性別
+            // 稱呼邏輯
             const sibling = animal.animal_sex === 'M' ? '弟弟' : (animal.animal_sex === 'F' ? '妹妹' : '毛孩');
             const sexText = animal.animal_sex === 'M' ? '男生' : (animal.animal_sex === 'F' ? '女生' : '未標示');
             
-            // 去除空白
+            // 去除品種空白 (修正「混種犬     」的問題)
             const variety = animal.animal_Variety ? animal.animal_Variety.trim() : '米克斯';
             const place = animal.animal_place || animal.shelter_name;
-            
-            // 優先使用收容編號
+
+            // 優先使用收容編號 (subid)，沒有才用系統編號 (id)
             const displayId = animal.animal_subid && animal.animal_subid.trim() !== '' ? animal.animal_subid : animal.animal_id;
 
-            // FB 文案 (已修正格式：包含詳細時間)
-            const fbText = `【認養文】求分享 🏠\n這隻可愛的${variety}${sibling}已經在${place}等家${days}天（相當於${durationText}）了！\n\n🐾 編號：${displayId}\n🐾 性別：${sexText}\n🐾 毛色：${animal.animal_colour}\n🐾 認養日期：${animal.animal_opendate} 後\n🐾 地點：${animal.shelter_address || '請洽收容所'}\n🐾 電話：${animal.shelter_tel}\n\n#領養代替購買 #動物認養`;
+            // FB 文案 (已修正格式)
+            const fbText = `【認養文】求分享 🏠\n這隻可愛的${variety}${sibling}已經在${place}等家 ${days} 天了！\n\n🐾 編號：${displayId}\n🐾 性別：${sexText}\n🐾 毛色：${animal.animal_colour}\n🐾 認養日期：${animal.animal_opendate} 後\n🐾 地點：${animal.shelter_address || '請洽收容所'}\n🐾 電話：${animal.shelter_tel}\n\n#領養代替購買 #動物認養`;
 
             const modalBody = document.getElementById('modalBody');
             
-            // HTML 結構 (已修正：入所天數跨欄顯示，避免換行)
             modalBody.innerHTML = `
                 <div class="modal-left">
                     <img src="${imgUrl || 'https://via.placeholder.com/400x300'}" class="modal-img">
@@ -515,12 +552,9 @@
                             </div>
                             <div class="info-item"><span class="info-label">收容編號</span><span class="info-value">${displayId}</span></div>
                             <div class="info-item"><span class="info-label">入所日期</span><span class="info-value">${animal.animal_createtime}</span></div>
-                            
-                            <div class="info-item full-width">
-                                <span class="info-label">入所天數</span>
-                                <span class="info-value" style="color:#d32f2f">${days}天（相當於${durationText}）</span>
-                            </div>
-                            
+                            <div class="info-item"><span class="info-label">入所天數</span><span class="info-value" style="color:#d32f2f">${days} 天 (${durationText})</span></div>
+                            <div class="info-item"><span class="info-label">來源行政區</span><span class="info-value">${animal.animal_foundplace}</span></div>
+                            <div class="info-item"><span class="info-label">公告收容所</span><span class="info-value">${place}</span></div>
                             <div class="info-item"><span class="info-label">品種</span><span class="info-value">${variety}</span></div>
                             <div class="info-item"><span class="info-label">性別</span><span class="info-value">${sexText}</span></div>
                             <div class="info-item"><span class="info-label">毛色</span><span class="info-value">${animal.animal_colour}</span></div>
@@ -555,7 +589,7 @@
             }
         }
 
-        // 修正：直接改變按鈕文字，不跳 Alert
+        // 修正：不跳出 alert，直接改變按鈕樣式
         function copyToClipboard(text) {
             navigator.clipboard.writeText(text).then(() => {
                 const btn = document.getElementById('copyBtn');
