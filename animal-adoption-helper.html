@@ -188,7 +188,7 @@
     <script>
         let allAnimals = [];
         let currentPage = 1;
-        const itemsPerPage = 24; // 調整為每頁顯示 24 筆，排版較整齊
+        const itemsPerPage = 24; 
 
         function showLoading() {
             document.getElementById('loadingBar').style.display = 'block';
@@ -211,15 +211,15 @@
             // 構建 API 篩選條件
             let filters = [`animal_status eq 'OPEN'`];
             
-            // 修正：數字欄位查詢不加單引號
-            if (area) filters.push(`animal_area_pkid eq ${area}`);
+            // 修正：這裡將地區代碼加上了單引號 '${area}'，因為資料庫將其視為文字
+            if (area) filters.push(`animal_area_pkid eq '${area}'`);
             if (type) filters.push(`animal_kind eq '${type}'`);
             if (color) filters.push(`animal_colour eq '${color}'`);
             if (gender) filters.push(`animal_sex eq '${gender}'`);
 
             try {
                 // 加上 timestamp 防止瀏覽器快取舊資料
-                const apiUrl = `https://data.moa.gov.tw/Service/OpenData/TransService.aspx?UnitId=QcbUEzN6E6DL&$filter=${encodeURIComponent(filters.join(' and '))}&$top=1000`; // 限制讀取 1000 筆避免過慢
+                const apiUrl = `https://data.moa.gov.tw/Service/OpenData/TransService.aspx?UnitId=QcbUEzN6E6DL&$filter=${encodeURIComponent(filters.join(' and '))}&$top=1000`;
                 
                 const response = await fetch(apiUrl);
                 if (!response.ok) throw new Error('Network response was not ok');
