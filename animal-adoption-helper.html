@@ -9,17 +9,20 @@
             max-width: 1200px;
             margin: 20px auto;
             padding: 20px;
-            font-family: Arial, sans-serif;
+            font-family: "Microsoft JhengHei", Arial, sans-serif;
         }
         .filter-group {
             display: flex;
             gap: 10px;
             margin-bottom: 20px;
             flex-wrap: wrap;
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 8px;
         }
         select, button {
             padding: 12px;
-            border: 2px solid #4CAF50;
+            border: 1px solid #ddd;
             border-radius: 4px;
             font-size: 14px;
             min-width: 120px;
@@ -27,63 +30,69 @@
         button {
             background: #4CAF50;
             color: white;
+            border: none;
             cursor: pointer;
             transition: opacity 0.3s;
+            font-weight: bold;
         }
         button:hover {
-            opacity: 0.8;
+            opacity: 0.9;
+            background: #45a049;
         }
         .gallery {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
             gap: 20px;
             margin-top: 20px;
         }
         .animal-card {
-            border: 2px solid #ddd;
+            border: 1px solid #eee;
             border-radius: 8px;
-            padding: 10px;
-            transition: transform 0.2s;
+            padding: 0;
+            transition: transform 0.2s, box-shadow 0.2s;
             cursor: pointer;
-            position: relative;
+            overflow: hidden;
+            background: white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
-        .animal-card.selected {
-            border-color: #4CAF50;
-            transform: scale(1.02);
+        .animal-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
         }
         .animal-img {
             width: 100%;
             height: 200px;
             object-fit: cover;
-            border-radius: 4px;
+            background-color: #eee;
         }
         .animal-info {
-            margin-top: 10px;
+            padding: 15px;
             font-size: 14px;
+            line-height: 1.6;
+            color: #333;
         }
-        .animal-info div {
-            margin: 5px 0;
+        .animal-info .tag {
+            display: inline-block;
+            background: #e8f5e9;
+            color: #2e7d32;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            margin-bottom: 5px;
         }
         .pagination {
             display: flex;
             justify-content: center;
-            gap: 10px;
-            margin-top: 20px;
+            gap: 5px;
+            margin-top: 30px;
+            flex-wrap: wrap;
         }
         .pagination button {
-            padding: 10px 15px;
-            background: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
+            min-width: 40px;
+            padding: 8px 12px;
         }
         .pagination button.active {
-            background: #45a049;
-        }
-        .pagination button:hover {
-            opacity: 0.8;
+            background: #2e7d32;
         }
         .loading-bar {
             width: 100%;
@@ -108,50 +117,40 @@
             50% { width: 100%; }
             100% { width: 0; }
         }
-
-        /* 手機瀏覽樣式 */
         @media (max-width: 600px) {
-            .gallery {
-                grid-template-columns: 1fr; /* 手機瀏覽時一列顯示 */
-            }
-            .filter-group {
-                flex-direction: column;
-            }
-            select, button {
-                width: 100%;
-            }
+            .filter-group { flex-direction: column; }
+            select, button { width: 100%; }
         }
     </style>
 </head>
 <body>
     <h1>動物認領養小幫手 🐾</h1>
     
-    <!-- 篩選條件 -->
     <div class="filter-group">
         <select id="areaSelect" onchange="loadAnimals()">
             <option value="">全部地區</option>
-            <option value="臺北市">臺北市</option>
-            <option value="新北市">新北市</option>
-            <option value="基隆市">基隆市</option>
-            <option value="宜蘭縣">宜蘭縣</option>
-            <option value="桃園市">桃園市</option>
-            <option value="新竹縣">新竹縣</option>
-            <option value="新竹市">新竹市</option>
-            <option value="苗栗縣">苗栗縣</option>
-            <option value="臺中市">臺中市</option>
-            <option value="彰化縣">彰化縣</option>
-            <option value="南投縣">南投縣</option>
-            <option value="雲林縣">雲林縣</option>
-            <option value="嘉義縣">嘉義縣</option>
-            <option value="嘉義市">嘉義市</option>
-            <option value="臺南市">臺南市</option>
-            <option value="高雄市">高雄市</option>
-            <option value="屏東縣">屏東縣</option>
-            <option value="花蓮縣">花蓮縣</option>
-            <option value="臺東縣">臺東縣</option>
-            <option value="澎湖縣">澎湖縣</option>
-            <option value="金門縣">金門縣</option>
-            <option value="連江縣">連江縣</option>
+            <option value="2">臺北市</option>
+            <option value="3">新北市</option>
+            <option value="4">基隆市</option>
+            <option value="5">宜蘭縣</option>
+            <option value="6">桃園市</option>
+            <option value="7">新竹縣</option>
+            <option value="8">新竹市</option>
+            <option value="9">苗栗縣</option>
+            <option value="10">臺中市</option>
+            <option value="11">彰化縣</option>
+            <option value="12">南投縣</option>
+            <option value="13">雲林縣</option>
+            <option value="14">嘉義縣</option>
+            <option value="15">嘉義市</option>
+            <option value="16">臺南市</option>
+            <option value="17">高雄市</option>
+            <option value="18">屏東縣</option>
+            <option value="19">花蓮縣</option>
+            <option value="20">臺東縣</option>
+            <option value="21">澎湖縣</option>
+            <option value="22">金門縣</option>
+            <option value="23">連江縣</option>
         </select>
 
         <select id="typeSelect" onchange="loadAnimals()">
@@ -167,6 +166,8 @@
             <option value="虎斑">虎斑</option>
             <option value="棕色">棕色</option>
             <option value="灰色">灰色</option>
+            <option value="黃色">黃色</option>
+            <option value="花色">花色</option>
         </select>
 
         <select id="genderSelect" onchange="loadAnimals()">
@@ -178,33 +179,27 @@
         <button onclick="filterOldestAnimals()">篩選入所最久</button>
     </div>
 
-    <!-- 載入進度條 -->
     <div class="loading-bar" id="loadingBar"></div>
 
-    <!-- 動物展示區 -->
     <div class="gallery" id="gallery"></div>
 
-    <!-- 分頁按鈕 -->
     <div class="pagination" id="pagination"></div>
 
     <script>
         let allAnimals = [];
         let currentPage = 1;
-        const itemsPerPage = 100;
+        const itemsPerPage = 24; // 調整為每頁顯示 24 筆，排版較整齊
 
-        // 顯示載入進度條
         function showLoading() {
-            const loadingBar = document.getElementById('loadingBar');
-            loadingBar.style.display = 'block';
+            document.getElementById('loadingBar').style.display = 'block';
+            document.getElementById('gallery').style.opacity = '0.5';
         }
 
-        // 隱藏載入進度條
         function hideLoading() {
-            const loadingBar = document.getElementById('loadingBar');
-            loadingBar.style.display = 'none';
+            document.getElementById('loadingBar').style.display = 'none';
+            document.getElementById('gallery').style.opacity = '1';
         }
 
-        // 加載動物資料
         async function loadAnimals() {
             showLoading();
 
@@ -213,90 +208,90 @@
             const color = document.getElementById('colorSelect').value;
             const gender = document.getElementById('genderSelect').value;
 
-            // 構建API篩選條件
+            // 構建 API 篩選條件
             let filters = [`animal_status eq 'OPEN'`];
-            if (area) filters.push(`animal_area_pkid eq '${area}'`);
+            
+            // 修正：數字欄位查詢不加單引號
+            if (area) filters.push(`animal_area_pkid eq ${area}`);
             if (type) filters.push(`animal_kind eq '${type}'`);
             if (color) filters.push(`animal_colour eq '${color}'`);
             if (gender) filters.push(`animal_sex eq '${gender}'`);
 
             try {
-                const response = await fetch(
-                    `https://data.moa.gov.tw/Service/OpenData/TransService.aspx?UnitId=QcbUEzN6E6DL&$filter=${encodeURIComponent(filters.join(' and '))}`
-                );
+                // 加上 timestamp 防止瀏覽器快取舊資料
+                const apiUrl = `https://data.moa.gov.tw/Service/OpenData/TransService.aspx?UnitId=QcbUEzN6E6DL&$filter=${encodeURIComponent(filters.join(' and '))}&$top=1000`; // 限制讀取 1000 筆避免過慢
+                
+                const response = await fetch(apiUrl);
+                if (!response.ok) throw new Error('Network response was not ok');
+                
                 const data = await response.json();
                 allAnimals = data;
-                currentPage = 1;  // 重置分頁
-                renderGallery();
-                renderPagination();
+                
+                if (allAnimals.length === 0) {
+                    document.getElementById('gallery').innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 20px;">查無資料，請嘗試放寬篩選條件。</div>';
+                    document.getElementById('pagination').innerHTML = '';
+                } else {
+                    currentPage = 1;
+                    renderGallery();
+                    renderPagination();
+                }
             } catch (error) {
                 console.error('資料加載失敗:', error);
-                alert('無法加載資料，請檢查控制台');
+                document.getElementById('gallery').innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: red;">資料加載失敗，可能是 API 暫時無法連線。</div>';
             } finally {
                 hideLoading();
             }
         }
 
-        // 篩選入所最久的動物
         function filterOldestAnimals() {
             if (allAnimals.length === 0) {
                 alert('請先載入動物資料！');
                 return;
             }
-
             // 按入所日期排序（舊到新）
-            const sortedAnimals = allAnimals.sort((a, b) => {
-                const dateA = new Date(a.animal_createtime);
-                const dateB = new Date(b.animal_createtime);
-                return dateA - dateB;
-            });
-
-            // 只顯示當前篩選地區的動物
-            const area = document.getElementById('areaSelect').value;
-            if (area) {
-                allAnimals = sortedAnimals.filter(animal => animal.animal_area_pkid === area);
-            } else {
-                allAnimals = sortedAnimals;
-            }
-
+            allAnimals.sort((a, b) => new Date(a.animal_createtime) - new Date(b.animal_createtime));
+            currentPage = 1;
             renderGallery();
             renderPagination();
         }
 
-        // 渲染動物卡片
         function renderGallery() {
             const gallery = document.getElementById('gallery');
             const start = (currentPage - 1) * itemsPerPage;
             const end = start + itemsPerPage;
             const animalsToShow = allAnimals.slice(start, end);
 
-            gallery.innerHTML = animalsToShow.map(animal => `
-                <div class="animal-card">
-                    <img src="${animal.album_file || 'https://via.placeholder.com/200x200?text=無照片'}" 
-                         class="animal-img" 
-                         alt="${animal.animal_Variety}"
-                         oncontextmenu="saveImage(event, '${animal.album_file}')">
+            gallery.innerHTML = animalsToShow.map(animal => {
+                // 修正：強制將 http 圖片轉為 https，避免在 GitHub Pages 顯示錯誤
+                let imgUrl = animal.album_file || '';
+                if (imgUrl && imgUrl.startsWith('http:')) {
+                    imgUrl = imgUrl.replace('http:', 'https:');
+                }
+                if (!imgUrl) imgUrl = 'https://via.placeholder.com/300x200?text=無照片';
+
+                const sexIcon = animal.animal_sex === 'M' ? '♂ 男生' : (animal.animal_sex === 'F' ? '♀ 女生' : '未標示');
+                
+                return `
+                <div class="animal-card" onclick="window.open('https://asms.moa.gov.tw/Ams/pet_view.aspx?id=${animal.animal_id}&subid=${animal.animal_subid}', '_blank')">
+                    <img src="${imgUrl}" class="animal-img" loading="lazy" alt="${animal.animal_Variety}" onerror="this.src='https://via.placeholder.com/300x200?text=圖片無法讀取'">
                     <div class="animal-info">
-                        <div>動物編號：${animal.animal_id}</div>
-                        <div>收容編號：${animal.animal_subid}</div>
-                        <div>品種：${animal.animal_Variety}</div>
-                        <div>性別：${animal.animal_sex === 'M' ? '男生' : '女生'}</div>
-                        <div>收容所：${animal.shelter_name}</div>
-                        <div>來源地點：${animal.animal_foundplace || '無資料'}</div>
-                        <div>開放日期：${animal.animal_opendate}</div>
-                        <div>入所日期：${animal.animal_createtime}</div>
+                        <span class="tag">${animal.animal_kind}</span>
+                        <span class="tag" style="background:${animal.animal_sex === 'M' ? '#e3f2fd' : '#fce4ec'}; color:${animal.animal_sex === 'M' ? '#1565c0' : '#c2185b'}">${sexIcon}</span>
+                        <div style="font-weight:bold; margin: 5px 0; font-size: 16px;">${animal.animal_place || animal.shelter_name}</div>
+                        <div style="color: #666; font-size: 13px;">品種：${animal.animal_Variety} / ${animal.animal_colour}</div>
+                        <div style="color: #888; margin-top: 5px; font-size: 12px;">入所：${animal.animal_createtime}</div>
                     </div>
                 </div>
-            `).join('');
+            `}).join('');
         }
 
-        // 分頁按鈕
         function renderPagination() {
             const totalPages = Math.ceil(allAnimals.length / itemsPerPage);
             const pagination = document.getElementById('pagination');
             pagination.innerHTML = '';
 
-            // 顯示最多 5 個分頁按鈕
+            if (totalPages <= 1) return;
+
             const maxButtons = 5;
             let startPage = Math.max(1, currentPage - Math.floor(maxButtons / 2));
             let endPage = Math.min(totalPages, startPage + maxButtons - 1);
@@ -305,56 +300,37 @@
                 startPage = Math.max(1, endPage - maxButtons + 1);
             }
 
-            // 上一頁按鈕
-            if (startPage > 1) {
-                const prevButton = document.createElement('button');
-                prevButton.textContent = '上一頁';
-                prevButton.onclick = () => {
-                    currentPage = Math.max(1, currentPage - 1);
-                    renderGallery();
-                    renderPagination();
-                };
-                pagination.appendChild(prevButton);
-            }
+            // 上一頁
+            const prevButton = document.createElement('button');
+            prevButton.textContent = '«';
+            prevButton.disabled = currentPage === 1;
+            prevButton.onclick = () => { if(currentPage > 1) { currentPage--; updateUI(); } };
+            pagination.appendChild(prevButton);
 
-            // 分頁按鈕
+            // 頁碼
             for (let i = startPage; i <= endPage; i++) {
                 const button = document.createElement('button');
                 button.textContent = i;
-                button.classList.toggle('active', i === currentPage);
-                button.onclick = () => {
-                    currentPage = i;
-                    renderGallery();
-                    renderPagination();
-                };
+                button.className = i === currentPage ? 'active' : '';
+                button.onclick = () => { currentPage = i; updateUI(); };
                 pagination.appendChild(button);
             }
 
-            // 下一頁按鈕
-            if (endPage < totalPages) {
-                const nextButton = document.createElement('button');
-                nextButton.textContent = '下一頁';
-                nextButton.onclick = () => {
-                    currentPage = Math.min(totalPages, currentPage + 1);
-                    renderGallery();
-                    renderPagination();
-                };
-                pagination.appendChild(nextButton);
-            }
+            // 下一頁
+            const nextButton = document.createElement('button');
+            nextButton.textContent = '»';
+            nextButton.disabled = currentPage === totalPages;
+            nextButton.onclick = () => { if(currentPage < totalPages) { currentPage++; updateUI(); } };
+            pagination.appendChild(nextButton);
         }
 
-        // 右鍵儲存圖片
-        function saveImage(event, imageUrl) {
-            event.preventDefault(); // 防止右鍵選單彈出
-            if (!imageUrl) return;
-
-            const link = document.createElement('a');
-            link.href = imageUrl;
-            link.download = `animal_${Date.now()}.jpg`;
-            link.click();
+        function updateUI() {
+            renderGallery();
+            renderPagination();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        // 初始化載入
+        // 初始化
         loadAnimals();
     </script>
 </body>
