@@ -240,6 +240,14 @@
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
+        /* 狀態列 */
+        .status-bar {
+            position: fixed; bottom: 10px; right: 10px;
+            font-size: 12px; color: #aaa; background: rgba(255,255,255,0.8);
+            padding: 5px 10px; border-radius: 20px;
+            pointer-events: none;
+        }
+
         @media (max-width: 600px) {
             .filter-group { flex-direction: column; }
             select, button { width: 100%; }
@@ -312,6 +320,7 @@
 
     <div class="gallery" id="gallery"></div>
     <div class="pagination" id="pagination"></div>
+    <div id="statusBar" class="status-bar"></div>
 
     <div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
         <div class="modal-content">
@@ -322,66 +331,70 @@
     </div>
 
     <script>
-        let rawData = [];      // 存放從 API 抓回來的原始資料
-        let displayData = [];  // 存放經過篩選後要顯示的資料
+        let rawData = [];
+        let displayData = [];
         let currentPage = 1;
         const itemsPerPage = 24;
         let isSortAscending = true;
 
-        // 改回最穩定的「本地篩選」模式，但抓取數量提升到 4000
+        // 智慧型資料抓取 (Smart Fetch)
         async function fetchAllData() {
             const loadingOverlay = document.getElementById('loadingOverlay');
             const loadingText = document.getElementById('loadingText');
             loadingOverlay.style.display = 'flex';
             
-            const maxRetries = 3;
-            let attempt = 0;
+            // 策略：先嘗試抓 3000 筆 (足夠覆蓋大部分需求)
+            // 如果失敗 (API 超時/錯誤)，自動降級抓 1000 筆 (保證有資料)
+            const targets = [3000, 1000];
             let success = false;
 
-            while (attempt < maxRetries && !success) {
+            for (let limit of targets) {
+                if (success) break;
                 try {
-                    attempt++;
-                    if(attempt > 1) loadingText.textContent = `連線忙碌中，正在嘗試第 ${attempt} 次連線...`;
+                    loadingText.textContent = `正在連線資料庫 (嘗試載入 ${limit} 筆)...`;
                     
-                    // 抓取 4000 筆資料，不做任何伺服器端過濾(除了 OPEN)，確保資料最完整
                     // 加上 timestamp 防止快取
-                    const apiUrl = `https://data.moa.gov.tw/Service/OpenData/TransService.aspx?UnitId=QcbUEzN6E6DL&$filter=animal_status eq 'OPEN'&$top=4000&_=${new Date().getTime()}`;
+                    const apiUrl = `https://data.moa.gov.tw/Service/OpenData/TransService.aspx?UnitId=QcbUEzN6E6DL&$filter=animal_status eq 'OPEN'&$top=${limit}&_=${new Date().getTime()}`;
                     
                     const response = await fetch(apiUrl);
-                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    if (!response.ok) throw new Error('Network fail');
                     
-                    rawData = await response.json();
-                    success = true;
-                    applyFilters(); 
+                    const data = await response.json();
                     
-                } catch (error) {
-                    console.error(`Attempt ${attempt} failed:`, error);
-                    if (attempt === maxRetries) {
-                        document.getElementById('gallery').innerHTML = `
-                            <div style="text-align:center; grid-column:1/-1; padding:30px; color:#d32f2f;">
-                                ⚠️ 無法連線至資料庫 (已嘗試 ${maxRetries} 次)<br>
-                                請檢查網路連線，或稍後再重新整理頁面。
-                            </div>`;
-                    } else {
-                        await new Promise(r => setTimeout(r, 1000));
+                    // 檢查是否真的有抓到資料
+                    if (data && data.length > 0) {
+                        rawData = data;
+                        success = true;
+                        document.getElementById('statusBar').textContent = `已成功載入 ${data.length} 筆資料`;
                     }
+                } catch (e) {
+                    console.log(`Fetch ${limit} failed, trying next...`);
                 }
             }
+
             loadingOverlay.style.display = 'none';
+
+            if (success) {
+                applyFilters();
+            } else {
+                document.getElementById('gallery').innerHTML = `
+                    <div style="text-align:center; grid-column:1/-1; padding:30px; color:#d32f2f;">
+                        ⚠️ 政府資料庫連線逾時，請檢查網路或稍後再重新整理頁面。
+                    </div>`;
+            }
         }
 
+        // 本地篩選 (最穩定，不受伺服器語法限制)
         function applyFilters() {
             const area = document.getElementById('areaSelect').value;
             const type = document.getElementById('typeSelect').value;
             const color = document.getElementById('colorSelect').value;
             const gender = document.getElementById('genderSelect').value;
 
-            // 本地端篩選邏輯 (最穩定)
             displayData = rawData.filter(animal => {
-                // 地區篩選 (使用寬鬆比較 != 避免型別問題)
-                if (area && animal.animal_area_pkid != area) return false;
+                // 強制轉型 String 比對，解決 "2" != 2 的問題
+                if (area && String(animal.animal_area_pkid) !== String(area)) return false;
                 
-                // 類型篩選
                 if (type) {
                     if (type === '其他') {
                         if (animal.animal_kind === '狗' || animal.animal_kind === '貓') return false;
@@ -390,10 +403,7 @@
                     }
                 }
 
-                // 顏色篩選
                 if (color && animal.animal_colour !== color) return false;
-                
-                // 性別篩選
                 if (gender && animal.animal_sex !== gender) return false;
                 
                 return true;
