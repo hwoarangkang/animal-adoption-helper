@@ -18,231 +18,273 @@
         h1 {
             text-align: center;
             color: #2c3e50;
-            margin-bottom: 20px;
-            font-size: 2rem;
-            text-shadow: 1px 1px 3px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            font-size: 2.2rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
         }
-        
-        /* --- 篩選區塊 --- */
+        /* 篩選區塊樣式 */
         .filter-group {
             display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
+            gap: 12px;
+            margin-bottom: 25px;
             flex-wrap: wrap;
             background: #fff;
-            padding: 15px;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
             justify-content: center;
             align-items: center;
         }
         select, button {
-            padding: 10px 14px;
+            padding: 12px 16px;
             border: 1px solid #e1e4e8;
-            border-radius: 8px;
-            font-size: 14px;
-            min-width: 120px;
+            border-radius: 10px;
+            font-size: 15px;
+            min-width: 130px;
             background-color: white;
-            transition: all 0.2s ease;
+            transition: all 0.3s ease;
         }
-        select:focus { border-color: #4CAF50; outline: none; }
-        
+        select:focus {
+            border-color: #4CAF50;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
+        }
+        /* 按鈕特製樣式 */
         button.sort-btn {
             background: #4CAF50;
             color: white;
             border: none;
             cursor: pointer;
             font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
         }
-        button.sort-btn:hover { background: #43a047; transform: translateY(-1px); }
-        button.sort-btn.active { background: #2e7d32; }
+        button.sort-btn:hover {
+            background: #43a047;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.2);
+        }
+        button.sort-btn.active {
+            background: #2e7d32;
+        }
 
-        /* --- 卡片網格 --- */
+        /* 卡片網格 */
         .gallery {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: 20px;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 25px;
             margin-top: 20px;
         }
         .animal-card {
             background: white;
-            border-radius: 12px;
+            border-radius: 16px;
             overflow: hidden;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
             transition: all 0.3s ease;
             cursor: pointer;
+            position: relative;
             border: 1px solid transparent;
         }
         .animal-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            transform: translateY(-8px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.1);
             border-color: #4CAF50;
         }
         .animal-img {
             width: 100%;
-            height: 180px;
+            height: 200px;
             object-fit: cover;
             background-color: #f0f0f0;
         }
-        .animal-info { padding: 12px; }
-        
-        /* 標籤樣式 */
-        .tag-row { display: flex; gap: 6px; margin-bottom: 6px; }
-        .tag { padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; }
+        .animal-info {
+            padding: 15px;
+        }
+        .tag-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+        .tag {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
         .tag.dog { background: #fff3e0; color: #ef6c00; }
         .tag.cat { background: #f3e5f5; color: #8e24aa; }
-        .tag.other { background: #e0f2f1; color: #00695c; }
         .tag.male { background: #e3f2fd; color: #1976d2; }
         .tag.female { background: #fce4ec; color: #c2185b; }
         
         .shelter-name {
-            font-size: 14px; font-weight: bold; color: #2c3e50;
-            margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            font-size: 15px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 5px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
-        .days-count { color: #d32f2f; font-weight: bold; font-size: 12px; margin-top: 6px; }
+        .days-count {
+            color: #d32f2f;
+            font-weight: bold;
+            font-size: 13px;
+            margin-top: 8px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
 
-        /* --- 彈出視窗 (緊湊版) --- */
+        /* 彈出視窗 (Modal) */
         .modal-overlay {
             display: none;
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.8);
+            background: rgba(0,0,0,0.7);
             z-index: 1000;
             justify-content: center;
             align-items: center;
-            backdrop-filter: blur(3px);
-            padding: 10px;
+            backdrop-filter: blur(5px);
         }
         .modal-content {
             background: white;
-            width: 100%;
-            max-width: 800px;
-            border-radius: 12px;
+            width: 90%;
+            max-width: 500px;
+            border-radius: 20px;
+            padding: 25px;
             position: relative;
-            box-shadow: 0 25px 50px rgba(0,0,0,0.4);
-            max-height: 95vh;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-height: 90vh;
             overflow-y: auto;
-            display: flex;
-            flex-direction: column;
+            animation: slideUp 0.3s ease;
         }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         
         .close-btn {
             position: absolute;
-            top: 10px; right: 10px;
-            font-size: 20px;
+            top: 15px;
+            right: 15px;
+            font-size: 24px;
             cursor: pointer;
-            color: #fff;
-            width: 30px; height: 30px;
-            display: flex; align-items: center; justify-content: center;
+            color: #666;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             border-radius: 50%;
-            background: rgba(0,0,0,0.5);
+            background: #f5f5f5;
             z-index: 10;
         }
-        .close-btn:hover { background: rgba(0,0,0,0.8); }
+        .close-btn:hover { background: #e0e0e0; }
 
         .modal-body {
             display: flex;
             flex-direction: column;
-            padding: 0;
+            gap: 15px;
         }
-
-        /* 電腦版：左圖右文 */
-        @media (min-width: 768px) {
-            .modal-body {
-                flex-direction: row;
-                height: 500px;
-            }
-            .modal-left {
-                width: 45%;
-                background: #000;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-            }
-            .modal-right {
-                width: 55%;
-                padding: 20px;
-                display: flex;
-                flex-direction: column;
-                justify-content: space-between;
-            }
-            .modal-img {
-                width: 100%;
-                height: 100%;
-                object-fit: contain;
-                max-height: none;
-            }
+        .modal-img {
+            width: 100%;
+            max-height: 350px;
+            object-fit: contain;
+            border-radius: 12px;
+            background: #f0f0f0;
         }
-
-        /* 手機版：緊湊上下 */
-        @media (max-width: 767px) {
-            .modal-body { flex-direction: column; }
-            .modal-left { width: 100%; height: 250px; background: #000; }
-            .modal-img { width: 100%; height: 100%; object-fit: contain; }
-            .modal-right { padding: 15px; }
-        }
-
-        .modal-title {
-            font-size: 1.2rem; font-weight: bold; color: #2c3e50;
-            margin-bottom: 10px; border-bottom: 2px solid #f0f0f0; padding-bottom: 5px;
-        }
-
         .info-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px 15px;
-            font-size: 13px;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 12px;
         }
-        
         .info-item {
-            display: flex;
-            align-items: baseline;
-            border-bottom: 1px dashed #eee;
-            padding-bottom: 3px;
+            font-size: 14px;
         }
-        .info-label { color: #888; width: 85px; flex-shrink: 0; }
-        .info-value { font-weight: bold; color: #333; word-break: break-all;}
-        
-        .full-width { grid-column: 1 / -1; }
+        .info-label { color: #666; font-size: 12px; margin-bottom: 2px; }
+        .info-value { font-weight: bold; color: #333; }
 
+        /* 動作按鈕群組 */
         .btn-group {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 10px;
-            margin-top: 15px;
+            margin-top: 10px;
         }
+
         .action-btn {
-            color: white; text-align: center;
-            padding: 10px;
-            border-radius: 6px;
-            cursor: pointer; font-weight: bold; border: none;
-            display: flex; align-items: center; justify-content: center; gap: 5px;
-            font-size: 13px;
+            color: white;
+            text-align: center;
+            padding: 15px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: bold;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            font-size: 14px;
         }
         .btn-copy { background: #1877F2; }
+        .btn-copy:hover { background: #166fe5; }
+        
         .btn-img { background: #FF9800; }
-        .tip-text { text-align: center; font-size: 11px; color: #999; margin-top: 5px; }
+        .btn-img:hover { background: #f57c00; }
 
-        /* --- 分頁與讀取 --- */
-        .pagination { display: flex; justify-content: center; gap: 5px; margin-top: 30px; padding-bottom: 30px; }
-        .pagination button { min-width: 35px; background: white; color: #333; padding: 5px 10px; }
-        .pagination button.active { background: #4CAF50; color: white; border-color: #4CAF50; }
+        .tip-text {
+            text-align: center;
+            font-size: 12px;
+            color: #888;
+            margin-top: 5px;
+        }
 
+        /* 分頁 */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 40px;
+            padding-bottom: 40px;
+        }
+        .pagination button {
+            min-width: 40px;
+            background: white;
+            color: #333;
+        }
+        .pagination button.active {
+            background: #4CAF50;
+            color: white;
+            border-color: #4CAF50;
+        }
+
+        /* 讀取動畫 */
         .loading-overlay {
-            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(255,255,255,0.95);
-            display: flex; justify-content: center; align-items: center; z-index: 2000; flex-direction: column;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(255,255,255,0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            flex-direction: column;
         }
         .spinner {
-            width: 40px; height: 40px; border: 4px solid #f3f3f3;
-            border-top: 4px solid #4CAF50; border-radius: 50%;
-            animation: spin 1s linear infinite; margin-bottom: 15px;
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #4CAF50;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 15px;
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
+        
         @media (max-width: 600px) {
             .filter-group { flex-direction: column; }
             select, button { width: 100%; }
+            .btn-group { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -277,10 +319,9 @@
         </select>
 
         <select id="typeSelect" onchange="applyFilters()">
-            <option value="">🐾 全部種族</option>
+            <option value="">🐾 全部類型</option>
             <option value="狗">狗狗</option>
             <option value="貓">貓咪</option>
-            <option value="其他">其他動物</option>
         </select>
 
         <select id="colorSelect" onchange="applyFilters()">
@@ -307,7 +348,7 @@
 
     <div class="loading-overlay" id="loadingOverlay">
         <div class="spinner"></div>
-        <div id="loadingText" style="font-weight:bold; color:#555;">正在搜尋等待家的毛孩...</div>
+        <div style="font-weight:bold; color:#555;">正在搜尋等待家的毛孩...</div>
     </div>
 
     <div class="gallery" id="gallery"></div>
@@ -328,15 +369,12 @@
         const itemsPerPage = 24;
         let isSortAscending = true; // true = 舊到新 (最久先)
 
-        // 核心邏輯：回到最穩定的「一次抓取 + 本地篩選」
-        // 將數量提升至 3000，確保新竹資料能被抓到
         async function fetchAllData() {
             const loadingOverlay = document.getElementById('loadingOverlay');
             loadingOverlay.style.display = 'flex';
             
             try {
-                // 強制抓取 3000 筆資料，不做任何篩選 (只篩選 OPEN)
-                const apiUrl = `https://data.moa.gov.tw/Service/OpenData/TransService.aspx?UnitId=QcbUEzN6E6DL&$filter=animal_status eq 'OPEN'&$top=3000`;
+                const apiUrl = `https://data.moa.gov.tw/Service/OpenData/TransService.aspx?UnitId=QcbUEzN6E6DL&$filter=animal_status eq 'OPEN'&$top=2000`;
                 const response = await fetch(apiUrl);
                 if (!response.ok) throw new Error('API Error');
                 
@@ -351,7 +389,6 @@
             }
         }
 
-        // 本地篩選 (最穩定)
         function applyFilters() {
             const area = document.getElementById('areaSelect').value;
             const type = document.getElementById('typeSelect').value;
@@ -359,17 +396,8 @@
             const gender = document.getElementById('genderSelect').value;
 
             displayData = rawData.filter(animal => {
-                // 強制轉型 String 比對，避免 "2" != 2
-                if (area && String(animal.animal_area_pkid) !== String(area)) return false;
-                
-                if (type) {
-                    if (type === '其他') {
-                        if (animal.animal_kind === '狗' || animal.animal_kind === '貓') return false;
-                    } else {
-                        if (animal.animal_kind !== type) return false;
-                    }
-                }
-
+                if (area && animal.animal_area_pkid != area) return false;
+                if (type && animal.animal_kind !== type) return false;
                 if (color && animal.animal_colour !== color) return false;
                 if (gender && animal.animal_sex !== gender) return false;
                 return true;
@@ -392,13 +420,11 @@
         }
 
         function executeSort() {
-            if (displayData.length > 0) {
-                displayData.sort((a, b) => {
-                    const dateA = new Date(a.animal_createtime);
-                    const dateB = new Date(b.animal_createtime);
-                    return isSortAscending ? dateA - dateB : dateB - dateA;
-                });
-            }
+            displayData.sort((a, b) => {
+                const dateA = new Date(a.animal_createtime);
+                const dateB = new Date(b.animal_createtime);
+                return isSortAscending ? dateA - dateB : dateB - dateA;
+            });
             currentPage = 1;
             renderGallery();
             renderPagination();
@@ -413,10 +439,8 @@
 
         function renderGallery() {
             const gallery = document.getElementById('gallery');
-            
             if (displayData.length === 0) {
                 gallery.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #888; font-size: 18px;">🐕 找不到符合條件的毛小孩，試試看放寬條件吧！</div>';
-                document.getElementById('pagination').innerHTML = '';
                 return;
             }
 
@@ -431,11 +455,7 @@
 
                 const days = calculateDays(animal.animal_createtime);
                 const genderTag = animal.animal_sex === 'M' ? '<span class="tag male">♂ 男生</span>' : (animal.animal_sex === 'F' ? '<span class="tag female">♀ 女生</span>' : '');
-                
-                let typeTag = '';
-                if (animal.animal_kind === '狗') typeTag = '<span class="tag dog">🐶</span>';
-                else if (animal.animal_kind === '貓') typeTag = '<span class="tag cat">🐱</span>';
-                else typeTag = `<span class="tag other">${animal.animal_kind}</span>`;
+                const typeTag = animal.animal_kind === '狗' ? '<span class="tag dog">🐶 狗狗</span>' : '<span class="tag cat">🐱 貓咪</span>';
 
                 return `
                 <div class="animal-card" onclick="openModal(${start + index})">
@@ -453,8 +473,6 @@
         }
 
         function renderPagination() {
-            if (displayData.length === 0) return;
-
             const totalPages = Math.ceil(displayData.length / itemsPerPage);
             const pagination = document.getElementById('pagination');
             pagination.innerHTML = '';
@@ -490,7 +508,7 @@
             pagination.appendChild(nextButton);
         }
 
-        // --- 彈出視窗 ---
+        // --- Modal 功能 ---
         function openModal(index) {
             const animal = displayData[index];
             if (!animal) return;
@@ -499,45 +517,33 @@
             let imgUrl = animal.album_file || '';
             if (imgUrl.startsWith('http:')) imgUrl = imgUrl.replace('http:', 'https:');
             
-            const sibling = animal.animal_sex === 'M' ? '弟弟' : (animal.animal_sex === 'F' ? '妹妹' : '毛孩');
-            const sexText = animal.animal_sex === 'M' ? '男生' : (animal.animal_sex === 'F' ? '女生' : '未標示');
-            
-            const fbText = `【認養文】求分享 🏠\n這隻可愛的${animal.animal_Variety}${sibling}已經在${animal.animal_place || animal.shelter_name}等家 ${days} 天了！\n\n🐾 編號：${animal.animal_id}\n🐾 性別：${sexText}\n🐾 毛色：${animal.animal_colour}\n🐾 地點：${animal.shelter_address || animal.shelter_name}\n🐾 電話：${animal.shelter_tel}\n\n#領養代替購買 #動物認養`;
-
             const modalBody = document.getElementById('modalBody');
             
+            // 構建 FB 貼文文字 (加上圖片連結作為備案)
+            const fbText = `【認養文】求分享 🏠\n這隻可愛的 ${animal.animal_Variety} 已經在 ${animal.shelter_name} 等家 ${days} 天了！\n\n🐾 編號：${animal.animal_id}\n🐾 性別：${animal.animal_sex === 'M' ? '男生' : '女生'}\n🐾 毛色：${animal.animal_colour}\n🐾 地點：${animal.shelter_address || animal.shelter_name}\n🐾 電話：${animal.shelter_tel}\n\n#領養代替購買 #動物認養`;
+
             modalBody.innerHTML = `
-                <div class="modal-left">
-                    <img src="${imgUrl || 'https://via.placeholder.com/400x300'}" class="modal-img">
+                <img src="${imgUrl || 'https://via.placeholder.com/400x300'}" class="modal-img">
+                <div style="font-size: 1.2rem; font-weight: bold; margin: 5px 0;">${animal.animal_place || animal.shelter_name}</div>
+                <div class="info-grid">
+                    <div class="info-item"><div class="info-label">收容編號</div><div class="info-value">${animal.animal_subid || animal.animal_id}</div></div>
+                    <div class="info-item"><div class="info-label">入所天數</div><div class="info-value" style="color:#d32f2f">${days} 天</div></div>
+                    <div class="info-item"><div class="info-label">品種</div><div class="info-value">${animal.animal_Variety}</div></div>
+                    <div class="info-item"><div class="info-label">性別</div><div class="info-value">${animal.animal_sex === 'M' ? '男生' : '女生'}</div></div>
+                    <div class="info-item"><div class="info-label">毛色</div><div class="info-value">${animal.animal_colour}</div></div>
+                    <div class="info-item"><div class="info-label">電話</div><div class="info-value">${animal.shelter_tel}</div></div>
+                    <div class="info-item" style="grid-column: 1/-1"><div class="info-label">地址</div><div class="info-value">${animal.shelter_address || '請洽收容所'}</div></div>
                 </div>
-                <div class="modal-right">
-                    <div>
-                        <div class="modal-title">${animal.animal_place || animal.shelter_name}</div>
-                        <div class="info-grid">
-                            <div class="info-item full-width"><span class="info-label">開放認養</span><span class="info-value" style="color:#2e7d32">適合認養 ( ${animal.animal_opendate} )</span></div>
-                            <div class="info-item"><span class="info-label">收容編號</span><span class="info-value">${animal.animal_subid || animal.animal_id}</span></div>
-                            <div class="info-item"><span class="info-label">入所天數</span><span class="info-value" style="color:#d32f2f">${days} 天</span></div>
-                            <div class="info-item"><span class="info-label">品種</span><span class="info-value">${animal.animal_Variety}</span></div>
-                            <div class="info-item"><span class="info-label">性別</span><span class="info-value">${sexText}</span></div>
-                            <div class="info-item"><span class="info-label">毛色</span><span class="info-value">${animal.animal_colour}</span></div>
-                            <div class="info-item"><span class="info-label">電話</span><span class="info-value">${animal.shelter_tel}</span></div>
-                            <div class="info-item full-width"><span class="info-label">地址</span><span class="info-value">${animal.shelter_address || '請洽收容所'}</span></div>
-                            ${animal.animal_remark ? `<div class="info-item full-width"><span class="info-label">備註</span><span class="info-value" style="color:#666;font-weight:normal">${animal.animal_remark}</span></div>` : ''}
-                        </div>
-                    </div>
-                    
-                    <div>
-                        <div class="btn-group">
-                            <button class="action-btn btn-copy" onclick="copyToClipboard(\`${fbText.replace(/`/g, '\\`')}\`)">
-                                📋 複製認養文
-                            </button>
-                            <button class="action-btn btn-img" onclick="window.open('${imgUrl}', '_blank')">
-                                🖼️ 開啟原始圖
-                            </button>
-                        </div>
-                        <div class="tip-text">💡 複製文字後，請開啟原始圖下載，再到 FB 貼上圖片</div>
-                    </div>
+                
+                <div class="btn-group">
+                    <button class="action-btn btn-copy" onclick="copyToClipboard(\`${fbText.replace(/`/g, '\\`')}\`)">
+                        📋 複製認養文
+                    </button>
+                    <button class="action-btn btn-img" onclick="window.open('${imgUrl}', '_blank')">
+                        🖼️ 開啟原始圖
+                    </button>
                 </div>
+                <div class="tip-text">💡 提示：複製文字後，請開啟原始圖下載或複製，再到 FB 貼上圖片</div>
             `;
 
             document.getElementById('modalOverlay').style.display = 'flex';
@@ -553,7 +559,7 @@
 
         function copyToClipboard(text) {
             navigator.clipboard.writeText(text).then(() => {
-                alert('✅ 認養文已複製！');
+                alert('✅ 文字已複製！\n\n下一步：請點擊「開啟原始圖」，然後右鍵複製圖片，一起貼到 FB 吧！');
             }).catch(err => {
                 alert('複製失敗，請手動複製。');
             });
