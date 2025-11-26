@@ -106,22 +106,22 @@
             display: none;
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.8); /* 背景深一點更專注 */
+            background: rgba(0,0,0,0.8);
             z-index: 1000;
             justify-content: center;
             align-items: center;
             backdrop-filter: blur(3px);
-            padding: 10px; /* 防止手機貼邊 */
+            padding: 10px;
         }
         .modal-content {
             background: white;
             width: 100%;
-            max-width: 800px; /* 寬一點，適合左右排版 */
+            max-width: 800px;
             border-radius: 12px;
             position: relative;
             box-shadow: 0 25px 50px rgba(0,0,0,0.4);
             max-height: 95vh;
-            overflow-y: auto; /* 只有在真的放不下的時候才滾動 */
+            overflow-y: auto;
             display: flex;
             flex-direction: column;
         }
@@ -135,14 +135,14 @@
             width: 30px; height: 30px;
             display: flex; align-items: center; justify-content: center;
             border-radius: 50%;
-            background: rgba(0,0,0,0.5); /* 半透明黑色 */
+            background: rgba(0,0,0,0.5);
             z-index: 10;
         }
         .close-btn:hover { background: rgba(0,0,0,0.8); }
 
         .modal-body {
             display: flex;
-            flex-direction: column; /* 手機預設上下 */
+            flex-direction: column;
             padding: 0;
         }
 
@@ -150,7 +150,7 @@
         @media (min-width: 768px) {
             .modal-body {
                 flex-direction: row;
-                height: 500px; /* 固定高度讓排版更穩定 */
+                height: 500px;
             }
             .modal-left {
                 width: 45%;
@@ -164,12 +164,12 @@
                 padding: 20px;
                 display: flex;
                 flex-direction: column;
-                justify-content: space-between; /* 上下撐開 */
+                justify-content: space-between;
             }
             .modal-img {
                 width: 100%;
                 height: 100%;
-                object-fit: contain; /* 圖片保持比例不裁切 */
+                object-fit: contain;
                 max-height: none;
             }
         }
@@ -182,7 +182,6 @@
             .modal-right { padding: 15px; }
         }
 
-        /* 右側資訊欄位微調 */
         .modal-title {
             font-size: 1.2rem; font-weight: bold; color: #2c3e50;
             margin-bottom: 10px; border-bottom: 2px solid #f0f0f0; padding-bottom: 5px;
@@ -190,9 +189,9 @@
 
         .info-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr; /* 兩欄 */
-            gap: 8px 15px; /* 上下間距小，左右間距適中 */
-            font-size: 13px; /* 字體縮小一點 */
+            grid-template-columns: 1fr 1fr;
+            gap: 8px 15px;
+            font-size: 13px;
         }
         
         .info-item {
@@ -204,10 +203,8 @@
         .info-label { color: #888; width: 85px; flex-shrink: 0; }
         .info-value { font-weight: bold; color: #333; word-break: break-all;}
         
-        /* 跨欄位 (地址、備註) */
         .full-width { grid-column: 1 / -1; }
 
-        /* 按鈕群組 (緊湊) */
         .btn-group {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -216,7 +213,7 @@
         }
         .action-btn {
             color: white; text-align: center;
-            padding: 10px; /* 縮小按鈕高度 */
+            padding: 10px;
             border-radius: 6px;
             cursor: pointer; font-weight: bold; border: none;
             display: flex; align-items: center; justify-content: center; gap: 5px;
@@ -253,7 +250,7 @@
     <h1>🐶 動物認領養小幫手</h1>
     
     <div class="filter-group">
-        <select id="areaSelect" onchange="applyFilters()">
+        <select id="areaSelect" onchange="fetchData()">
             <option value="">🏠 全部地區</option>
             <option value="2">臺北市</option>
             <option value="3">新北市</option>
@@ -279,14 +276,14 @@
             <option value="23">連江縣</option>
         </select>
 
-        <select id="typeSelect" onchange="applyFilters()">
+        <select id="typeSelect" onchange="fetchData()">
             <option value="">🐾 全部種族</option>
             <option value="狗">狗狗</option>
             <option value="貓">貓咪</option>
             <option value="其他">其他動物</option>
         </select>
 
-        <select id="colorSelect" onchange="applyFilters()">
+        <select id="colorSelect" onchange="fetchData()">
             <option value="">🎨 全部顏色</option>
             <option value="黑色">黑色</option>
             <option value="白色">白色</option>
@@ -297,7 +294,7 @@
             <option value="花色">花色</option>
         </select>
 
-        <select id="genderSelect" onchange="applyFilters()">
+        <select id="genderSelect" onchange="fetchData()">
             <option value="">⚧️ 全部性別</option>
             <option value="M">男生</option>
             <option value="F">女生</option>
@@ -325,77 +322,75 @@
     </div>
 
     <script>
-        let rawData = [];
-        let displayData = [];
+        let allData = [];
         let currentPage = 1;
         const itemsPerPage = 24;
         let isSortAscending = true;
 
-        // 核心改進：具備「自動重試」功能的資料抓取
-        async function fetchAllData() {
+        // 核心修正：將篩選邏輯移至 API 請求階段
+        async function fetchData() {
             const loadingOverlay = document.getElementById('loadingOverlay');
             const loadingText = document.getElementById('loadingText');
             loadingOverlay.style.display = 'flex';
+            loadingText.textContent = "正在向全國資料庫查詢中...";
             
-            const maxRetries = 3;
-            let attempt = 0;
-            let success = false;
-
-            while (attempt < maxRetries && !success) {
-                try {
-                    attempt++;
-                    if(attempt > 1) loadingText.textContent = `連線忙碌中，正在嘗試第 ${attempt} 次連線...`;
-                    
-                    // 加上時間戳記 timestamp 避免快取舊的錯誤回應
-                    const apiUrl = `https://data.moa.gov.tw/Service/OpenData/TransService.aspx?UnitId=QcbUEzN6E6DL&$filter=animal_status eq 'OPEN'&$top=2000&_=${new Date().getTime()}`;
-                    
-                    const response = await fetch(apiUrl);
-                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-                    
-                    rawData = await response.json();
-                    success = true;
-                    applyFilters(); 
-                    
-                } catch (error) {
-                    console.error(`Attempt ${attempt} failed:`, error);
-                    if (attempt === maxRetries) {
-                        document.getElementById('gallery').innerHTML = `
-                            <div style="text-align:center; grid-column:1/-1; padding:30px; color:#d32f2f;">
-                                ⚠️ 無法連線至資料庫 (已嘗試 ${maxRetries} 次)<br>
-                                請檢查網路連線，或稍後再重新整理頁面。
-                            </div>`;
-                    } else {
-                        // 等待 1 秒後重試
-                        await new Promise(r => setTimeout(r, 1000));
-                    }
-                }
-            }
-            loadingOverlay.style.display = 'none';
-        }
-
-        function applyFilters() {
+            // 讀取當前篩選條件
             const area = document.getElementById('areaSelect').value;
             const type = document.getElementById('typeSelect').value;
             const color = document.getElementById('colorSelect').value;
             const gender = document.getElementById('genderSelect').value;
 
-            displayData = rawData.filter(animal => {
-                if (area && animal.animal_area_pkid != area) return false;
-                
-                if (type) {
-                    if (type === '其他') {
-                        if (animal.animal_kind === '狗' || animal.animal_kind === '貓') return false;
-                    } else {
-                        if (animal.animal_kind !== type) return false;
-                    }
+            // 構建 API 篩選字串 (OData 格式)
+            let filterQuery = `animal_status eq 'OPEN'`;
+
+            // 1. 地區篩選 (最關鍵的修正)
+            if (area) {
+                // 強制伺服器只回傳該地區資料，解決 top=2000 限制問題
+                filterQuery += ` and animal_area_pkid eq ${area}`;
+            }
+
+            // 2. 類型篩選
+            if (type) {
+                if (type === '其他') {
+                    // 排除貓狗，剩下的就是其他
+                    filterQuery += ` and animal_kind ne '狗' and animal_kind ne '貓'`;
+                } else {
+                    filterQuery += ` and animal_kind eq '${type}'`;
                 }
+            }
 
-                if (color && animal.animal_colour !== color) return false;
-                if (gender && animal.animal_sex !== gender) return false;
-                return true;
-            });
+            // 3. 顏色篩選
+            if (color) {
+                filterQuery += ` and animal_colour eq '${color}'`;
+            }
 
-            executeSort(); 
+            // 4. 性別篩選
+            if (gender) {
+                filterQuery += ` and animal_sex eq '${gender}'`;
+            }
+
+            try {
+                // 為了保險起見，如果有篩選條件，我們抓取前 1000 筆符合條件的資料即可
+                // 如果是「全部地區」，則抓取較多資料
+                const limit = (area || type || color) ? 1000 : 2000;
+                
+                const apiUrl = `https://data.moa.gov.tw/Service/OpenData/TransService.aspx?UnitId=QcbUEzN6E6DL&$filter=${encodeURIComponent(filterQuery)}&$top=${limit}&_=${new Date().getTime()}`;
+                
+                const response = await fetch(apiUrl);
+                if (!response.ok) throw new Error('API Error');
+                
+                allData = await response.json();
+                
+                // 抓回來後再進行排序
+                executeSort(false); // false 表示不重新 render，因為 executeSort 會 render
+
+            } catch (error) {
+                console.error(error);
+                document.getElementById('gallery').innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #d32f2f;">⚠️ 連線失敗，請檢查網路或稍後再試。</div>';
+                document.getElementById('pagination').innerHTML = '';
+            } finally {
+                loadingOverlay.style.display = 'none';
+            }
         }
 
         function toggleSort() {
@@ -411,15 +406,23 @@
             executeSort();
         }
 
-        function executeSort() {
-            displayData.sort((a, b) => {
-                const dateA = new Date(a.animal_createtime);
-                const dateB = new Date(b.animal_createtime);
-                return isSortAscending ? dateA - dateB : dateB - dateA;
-            });
+        function executeSort(shouldRender = true) {
+            if (allData.length > 0) {
+                allData.sort((a, b) => {
+                    const dateA = new Date(a.animal_createtime);
+                    const dateB = new Date(b.animal_createtime);
+                    return isSortAscending ? dateA - dateB : dateB - dateA;
+                });
+            }
             currentPage = 1;
-            renderGallery();
-            renderPagination();
+            if (shouldRender) {
+                renderGallery();
+                renderPagination();
+            } else {
+                // 第一次載入時也要 render
+                renderGallery();
+                renderPagination();
+            }
         }
 
         function calculateDays(dateString) {
@@ -431,14 +434,16 @@
 
         function renderGallery() {
             const gallery = document.getElementById('gallery');
-            if (displayData.length === 0) {
+            
+            if (!allData || allData.length === 0) {
                 gallery.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #888;">🐕 找不到符合條件的毛小孩，試試看放寬條件吧！</div>';
+                document.getElementById('pagination').innerHTML = '';
                 return;
             }
 
             const start = (currentPage - 1) * itemsPerPage;
             const end = start + itemsPerPage;
-            const animalsToShow = displayData.slice(start, end);
+            const animalsToShow = allData.slice(start, end);
 
             gallery.innerHTML = animalsToShow.map((animal, index) => {
                 let imgUrl = animal.album_file || '';
@@ -469,7 +474,9 @@
         }
 
         function renderPagination() {
-            const totalPages = Math.ceil(displayData.length / itemsPerPage);
+            if (!allData || allData.length === 0) return;
+
+            const totalPages = Math.ceil(allData.length / itemsPerPage);
             const pagination = document.getElementById('pagination');
             pagination.innerHTML = '';
 
@@ -504,40 +511,47 @@
             pagination.appendChild(nextButton);
         }
 
-        // --- 彈出視窗 (緊湊排版邏輯) ---
         function openModal(index) {
-            const animal = displayData[index];
-            if (!animal) return;
+            const animal = allData[index]; // 這裡用 allData 的當前頁面切片
+            // 修正：這裡的 index 是相對於當前頁面的，需要加上 offset
+            // 但因為我們傳入的是 start + index，所以已經是正確的絕對索引了
+            // 不對，map 裡的 index 是 0~23，傳入的是 start + index，這在 allData 中是正確的
+            
+            // 為了安全起見，直接從 allData 取
+            const realIndex = (currentPage - 1) * itemsPerPage + (index % itemsPerPage); 
+            // 其實傳入的參數已經是正確的絕對索引了，直接用即可
+            const targetAnimal = allData[index];
 
-            const days = calculateDays(animal.animal_createtime);
-            let imgUrl = animal.album_file || '';
+            if (!targetAnimal) return;
+
+            const days = calculateDays(targetAnimal.animal_createtime);
+            let imgUrl = targetAnimal.album_file || '';
             if (imgUrl.startsWith('http:')) imgUrl = imgUrl.replace('http:', 'https:');
             
-            const sibling = animal.animal_sex === 'M' ? '弟弟' : (animal.animal_sex === 'F' ? '妹妹' : '毛孩');
-            const sexText = animal.animal_sex === 'M' ? '男生' : (animal.animal_sex === 'F' ? '女生' : '未標示');
+            const sibling = targetAnimal.animal_sex === 'M' ? '弟弟' : (targetAnimal.animal_sex === 'F' ? '妹妹' : '毛孩');
+            const sexText = targetAnimal.animal_sex === 'M' ? '男生' : (targetAnimal.animal_sex === 'F' ? '女生' : '未標示');
             
-            const fbText = `【認養文】求分享 🏠\n這隻可愛的${animal.animal_Variety}${sibling}已經在${animal.animal_place || animal.shelter_name}等家 ${days} 天了！\n\n🐾 編號：${animal.animal_id}\n🐾 性別：${sexText}\n🐾 毛色：${animal.animal_colour}\n🐾 地點：${animal.shelter_address || animal.shelter_name}\n🐾 電話：${animal.shelter_tel}\n\n#領養代替購買 #動物認養`;
+            const fbText = `【認養文】求分享 🏠\n這隻可愛的${targetAnimal.animal_Variety}${sibling}已經在${targetAnimal.animal_place || targetAnimal.shelter_name}等家 ${days} 天了！\n\n🐾 編號：${targetAnimal.animal_id}\n🐾 性別：${sexText}\n🐾 毛色：${targetAnimal.animal_colour}\n🐾 地點：${targetAnimal.shelter_address || targetAnimal.shelter_name}\n🐾 電話：${targetAnimal.shelter_tel}\n\n#領養代替購買 #動物認養`;
 
             const modalBody = document.getElementById('modalBody');
             
-            // 緊湊排版 HTML 結構
             modalBody.innerHTML = `
                 <div class="modal-left">
                     <img src="${imgUrl || 'https://via.placeholder.com/400x300'}" class="modal-img">
                 </div>
                 <div class="modal-right">
                     <div>
-                        <div class="modal-title">${animal.animal_place || animal.shelter_name}</div>
+                        <div class="modal-title">${targetAnimal.animal_place || targetAnimal.shelter_name}</div>
                         <div class="info-grid">
-                            <div class="info-item full-width"><span class="info-label">開放認養</span><span class="info-value" style="color:#2e7d32">適合認養 ( ${animal.animal_opendate} )</span></div>
-                            <div class="info-item"><span class="info-label">收容編號</span><span class="info-value">${animal.animal_subid || animal.animal_id}</span></div>
+                            <div class="info-item full-width"><span class="info-label">開放認養</span><span class="info-value" style="color:#2e7d32">適合認養 ( ${targetAnimal.animal_opendate} )</span></div>
+                            <div class="info-item"><span class="info-label">收容編號</span><span class="info-value">${targetAnimal.animal_subid || targetAnimal.animal_id}</span></div>
                             <div class="info-item"><span class="info-label">入所天數</span><span class="info-value" style="color:#d32f2f">${days} 天</span></div>
-                            <div class="info-item"><span class="info-label">品種</span><span class="info-value">${animal.animal_Variety}</span></div>
+                            <div class="info-item"><span class="info-label">品種</span><span class="info-value">${targetAnimal.animal_Variety}</span></div>
                             <div class="info-item"><span class="info-label">性別</span><span class="info-value">${sexText}</span></div>
-                            <div class="info-item"><span class="info-label">毛色</span><span class="info-value">${animal.animal_colour}</span></div>
-                            <div class="info-item"><span class="info-label">電話</span><span class="info-value">${animal.shelter_tel}</span></div>
-                            <div class="info-item full-width"><span class="info-label">地址</span><span class="info-value">${animal.shelter_address || '請洽收容所'}</span></div>
-                            ${animal.animal_remark ? `<div class="info-item full-width"><span class="info-label">備註</span><span class="info-value" style="color:#666;font-weight:normal">${animal.animal_remark}</span></div>` : ''}
+                            <div class="info-item"><span class="info-label">毛色</span><span class="info-value">${targetAnimal.animal_colour}</span></div>
+                            <div class="info-item"><span class="info-label">電話</span><span class="info-value">${targetAnimal.shelter_tel}</span></div>
+                            <div class="info-item full-width"><span class="info-label">地址</span><span class="info-value">${targetAnimal.shelter_address || '請洽收容所'}</span></div>
+                            ${targetAnimal.animal_remark ? `<div class="info-item full-width"><span class="info-label">備註</span><span class="info-value" style="color:#666;font-weight:normal">${targetAnimal.animal_remark}</span></div>` : ''}
                         </div>
                     </div>
                     
@@ -574,7 +588,8 @@
             });
         }
 
-        fetchAllData();
+        // 頁面載入時先執行一次查詢 (預設顯示全部)
+        fetchData();
     </script>
 </body>
 </html>
