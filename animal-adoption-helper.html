@@ -150,7 +150,7 @@
         .modal-content {
             background: white;
             width: 90%;
-            max-width: 600px;
+            max-width: 500px;
             border-radius: 20px;
             padding: 25px;
             position: relative;
@@ -175,6 +175,7 @@
             justify-content: center;
             border-radius: 50%;
             background: #f5f5f5;
+            z-index: 10;
         }
         .close-btn:hover { background: #e0e0e0; }
 
@@ -204,23 +205,40 @@
         .info-label { color: #666; font-size: 12px; margin-bottom: 2px; }
         .info-value { font-weight: bold; color: #333; }
 
+        /* 動作按鈕群組 */
+        .btn-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
         .action-btn {
-            background: #1877F2;
             color: white;
             text-align: center;
             padding: 15px;
             border-radius: 12px;
             cursor: pointer;
             font-weight: bold;
-            margin-top: 10px;
             border: none;
-            width: 100%;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
+            gap: 6px;
+            font-size: 14px;
         }
-        .action-btn:hover { background: #166fe5; }
+        .btn-copy { background: #1877F2; }
+        .btn-copy:hover { background: #166fe5; }
+        
+        .btn-img { background: #FF9800; }
+        .btn-img:hover { background: #f57c00; }
+
+        .tip-text {
+            text-align: center;
+            font-size: 12px;
+            color: #888;
+            margin-top: 5px;
+        }
 
         /* 分頁 */
         .pagination {
@@ -266,6 +284,7 @@
         @media (max-width: 600px) {
             .filter-group { flex-direction: column; }
             select, button { width: 100%; }
+            .btn-group { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -348,21 +367,19 @@
         let displayData = [];
         let currentPage = 1;
         const itemsPerPage = 24;
-        let isSortAscending = true; // true = 舊到新 (最久先), false = 新到舊
+        let isSortAscending = true; // true = 舊到新 (最久先)
 
-        // 啟動：抓取資料
         async function fetchAllData() {
             const loadingOverlay = document.getElementById('loadingOverlay');
             loadingOverlay.style.display = 'flex';
             
             try {
-                // 抓取 2000 筆資料
                 const apiUrl = `https://data.moa.gov.tw/Service/OpenData/TransService.aspx?UnitId=QcbUEzN6E6DL&$filter=animal_status eq 'OPEN'&$top=2000`;
                 const response = await fetch(apiUrl);
                 if (!response.ok) throw new Error('API Error');
                 
                 rawData = await response.json();
-                applyFilters(); // 初始篩選
+                applyFilters(); 
                 
             } catch (error) {
                 console.error(error);
@@ -372,7 +389,6 @@
             }
         }
 
-        // 篩選邏輯
         function applyFilters() {
             const area = document.getElementById('areaSelect').value;
             const type = document.getElementById('typeSelect').value;
@@ -387,10 +403,9 @@
                 return true;
             });
 
-            executeSort(); // 篩選後執行排序
+            executeSort(); 
         }
 
-        // 切換排序模式
         function toggleSort() {
             isSortAscending = !isSortAscending;
             const btn = document.getElementById('sortBtn');
@@ -404,7 +419,6 @@
             executeSort();
         }
 
-        // 執行排序
         function executeSort() {
             displayData.sort((a, b) => {
                 const dateA = new Date(a.animal_createtime);
@@ -416,7 +430,6 @@
             renderPagination();
         }
 
-        // 計算天數
         function calculateDays(dateString) {
             const start = new Date(dateString);
             const now = new Date();
@@ -424,7 +437,6 @@
             return Math.floor(diff / (1000 * 60 * 60 * 24));
         }
 
-        // 渲染卡片
         function renderGallery() {
             const gallery = document.getElementById('gallery');
             if (displayData.length === 0) {
@@ -445,8 +457,6 @@
                 const genderTag = animal.animal_sex === 'M' ? '<span class="tag male">♂ 男生</span>' : (animal.animal_sex === 'F' ? '<span class="tag female">♀ 女生</span>' : '');
                 const typeTag = animal.animal_kind === '狗' ? '<span class="tag dog">🐶 狗狗</span>' : '<span class="tag cat">🐱 貓咪</span>';
 
-                // 將資料存入 dataset 方便 Modal 讀取，避免傳遞複雜參數
-                // 注意：這裡使用 data-index 來對應當前頁面的陣列
                 return `
                 <div class="animal-card" onclick="openModal(${start + index})">
                     <img src="${imgUrl}" class="animal-img" loading="lazy" alt="animal">
@@ -462,7 +472,6 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        // 分頁渲染
         function renderPagination() {
             const totalPages = Math.ceil(displayData.length / itemsPerPage);
             const pagination = document.getElementById('pagination');
@@ -478,14 +487,12 @@
                 startPage = Math.max(1, endPage - maxButtons + 1);
             }
 
-            // 上一頁
             const prevButton = document.createElement('button');
             prevButton.textContent = '«';
             prevButton.disabled = currentPage === 1;
             prevButton.onclick = () => { if(currentPage > 1) { currentPage--; renderGallery(); renderPagination(); } };
             pagination.appendChild(prevButton);
 
-            // 頁碼
             for (let i = startPage; i <= endPage; i++) {
                 const button = document.createElement('button');
                 button.textContent = i;
@@ -494,7 +501,6 @@
                 pagination.appendChild(button);
             }
 
-            // 下一頁
             const nextButton = document.createElement('button');
             nextButton.textContent = '»';
             nextButton.disabled = currentPage === totalPages;
@@ -502,8 +508,7 @@
             pagination.appendChild(nextButton);
         }
 
-        // --- 彈出視窗相關功能 ---
-
+        // --- Modal 功能 ---
         function openModal(index) {
             const animal = displayData[index];
             if (!animal) return;
@@ -514,7 +519,7 @@
             
             const modalBody = document.getElementById('modalBody');
             
-            // 構建 FB 貼文內容
+            // 構建 FB 貼文文字 (加上圖片連結作為備案)
             const fbText = `【認養文】求分享 🏠\n這隻可愛的 ${animal.animal_Variety} 已經在 ${animal.shelter_name} 等家 ${days} 天了！\n\n🐾 編號：${animal.animal_id}\n🐾 性別：${animal.animal_sex === 'M' ? '男生' : '女生'}\n🐾 毛色：${animal.animal_colour}\n🐾 地點：${animal.shelter_address || animal.shelter_name}\n🐾 電話：${animal.shelter_tel}\n\n#領養代替購買 #動物認養`;
 
             modalBody.innerHTML = `
@@ -526,19 +531,23 @@
                     <div class="info-item"><div class="info-label">品種</div><div class="info-value">${animal.animal_Variety}</div></div>
                     <div class="info-item"><div class="info-label">性別</div><div class="info-value">${animal.animal_sex === 'M' ? '男生' : '女生'}</div></div>
                     <div class="info-item"><div class="info-label">毛色</div><div class="info-value">${animal.animal_colour}</div></div>
-                    <div class="info-item"><div class="info-label">體型</div><div class="info-value">${animal.animal_bodytype === 'MINI' ? '小型' : (animal.animal_bodytype === 'MEDIUM' ? '中型' : '大型')}</div></div>
-                    <div class="info-item"><div class="info-label">聯絡電話</div><div class="info-value">${animal.shelter_tel}</div></div>
+                    <div class="info-item"><div class="info-label">電話</div><div class="info-value">${animal.shelter_tel}</div></div>
                     <div class="info-item" style="grid-column: 1/-1"><div class="info-label">地址</div><div class="info-value">${animal.shelter_address || '請洽收容所'}</div></div>
-                    ${animal.animal_remark ? `<div class="info-item" style="grid-column: 1/-1"><div class="info-label">備註</div><div class="info-value">${animal.animal_remark}</div></div>` : ''}
                 </div>
                 
-                <button class="action-btn" onclick="copyToClipboard(\`${fbText.replace(/`/g, '\\`')}\`)">
-                    📋 複製 FB 貼文內容 (含照片連結)
-                </button>
+                <div class="btn-group">
+                    <button class="action-btn btn-copy" onclick="copyToClipboard(\`${fbText.replace(/`/g, '\\`')}\`)">
+                        📋 複製認養文
+                    </button>
+                    <button class="action-btn btn-img" onclick="window.open('${imgUrl}', '_blank')">
+                        🖼️ 開啟原始圖
+                    </button>
+                </div>
+                <div class="tip-text">💡 提示：複製文字後，請開啟原始圖下載或複製，再到 FB 貼上圖片</div>
             `;
 
             document.getElementById('modalOverlay').style.display = 'flex';
-            document.body.style.overflow = 'hidden'; // 防止背景滾動
+            document.body.style.overflow = 'hidden';
         }
 
         function closeModal(event) {
@@ -550,9 +559,8 @@
 
         function copyToClipboard(text) {
             navigator.clipboard.writeText(text).then(() => {
-                alert('內容已複製！\n現在您可以到 Facebook 貼上發文並附上照片囉！🐶');
+                alert('✅ 文字已複製！\n\n下一步：請點擊「開啟原始圖」，然後右鍵複製圖片，一起貼到 FB 吧！');
             }).catch(err => {
-                console.error('複製失敗', err);
                 alert('複製失敗，請手動複製。');
             });
         }
