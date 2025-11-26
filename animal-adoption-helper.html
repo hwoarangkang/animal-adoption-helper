@@ -9,114 +9,156 @@
             max-width: 1200px;
             margin: 20px auto;
             padding: 20px;
-            font-family: "Microsoft JhengHei", Arial, sans-serif;
+            font-family: "Microsoft JhengHei", "Heiti TC", sans-serif;
+            background-color: #f5f5f5;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
         }
         .filter-group {
             display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
+            gap: 15px;
+            margin-bottom: 25px;
             flex-wrap: wrap;
-            background: #f9f9f9;
-            padding: 15px;
-            border-radius: 8px;
+            background: #fff;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            justify-content: center;
         }
         select, button {
-            padding: 12px;
+            padding: 12px 16px;
             border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 14px;
-            min-width: 120px;
+            border-radius: 8px;
+            font-size: 15px;
+            min-width: 130px;
+            background-color: white;
+        }
+        select:focus {
+            border-color: #4CAF50;
+            outline: none;
         }
         button {
             background: #4CAF50;
             color: white;
             border: none;
             cursor: pointer;
-            transition: opacity 0.3s;
+            transition: all 0.2s;
             font-weight: bold;
+            box-shadow: 0 2px 5px rgba(76, 175, 80, 0.3);
         }
         button:hover {
-            opacity: 0.9;
-            background: #45a049;
+            background: #43a047;
+            transform: translateY(-2px);
         }
         .gallery {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 20px;
+            gap: 25px;
             margin-top: 20px;
         }
         .animal-card {
-            border: 1px solid #eee;
-            border-radius: 8px;
+            border: none;
+            border-radius: 12px;
             padding: 0;
-            transition: transform 0.2s, box-shadow 0.2s;
+            transition: transform 0.3s, box-shadow 0.3s;
             cursor: pointer;
             overflow: hidden;
             background: white;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+            position: relative;
         }
         .animal-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            transform: translateY(-8px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.15);
         }
         .animal-img {
             width: 100%;
-            height: 200px;
+            height: 220px;
             object-fit: cover;
             background-color: #eee;
+            transition: opacity 0.3s;
         }
         .animal-info {
-            padding: 15px;
+            padding: 18px;
             font-size: 14px;
             line-height: 1.6;
-            color: #333;
+            color: #444;
+        }
+        .animal-info .tag-container {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 10px;
         }
         .animal-info .tag {
-            display: inline-block;
             background: #e8f5e9;
             color: #2e7d32;
-            padding: 2px 8px;
-            border-radius: 12px;
+            padding: 4px 10px;
+            border-radius: 20px;
             font-size: 12px;
-            margin-bottom: 5px;
+            font-weight: bold;
         }
+        .animal-info .tag.gender-m { background: #e3f2fd; color: #1565c0; }
+        .animal-info .tag.gender-f { background: #fce4ec; color: #c2185b; }
+        
+        .shelter-name {
+            font-weight: bold;
+            font-size: 16px;
+            margin-bottom: 6px;
+            color: #222;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
         .pagination {
             display: flex;
             justify-content: center;
-            gap: 5px;
-            margin-top: 30px;
+            gap: 8px;
+            margin-top: 40px;
             flex-wrap: wrap;
+            padding-bottom: 40px;
         }
         .pagination button {
-            min-width: 40px;
-            padding: 8px 12px;
+            min-width: 45px;
+            padding: 8px 15px;
+            background: white;
+            color: #333;
+            border: 1px solid #ddd;
+            box-shadow: none;
         }
         .pagination button.active {
-            background: #2e7d32;
-        }
-        .loading-bar {
-            width: 100%;
-            height: 4px;
-            background: #f0f0f0;
-            margin-top: 10px;
-            position: relative;
-            display: none;
-        }
-        .loading-bar::after {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 0;
-            height: 100%;
-            width: 0;
             background: #4CAF50;
-            animation: loading 1.5s infinite;
+            color: white;
+            border-color: #4CAF50;
         }
-        @keyframes loading {
-            0% { width: 0; }
-            50% { width: 100%; }
-            100% { width: 0; }
+        .pagination button:hover:not(.active):not(:disabled) {
+            background: #f1f1f1;
+            transform: none;
         }
+        .loading-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(255,255,255,0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            flex-direction: column;
+        }
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #4CAF50;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 15px;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
         @media (max-width: 600px) {
             .filter-group { flex-direction: column; }
             select, button { width: 100%; }
@@ -124,11 +166,11 @@
     </style>
 </head>
 <body>
-    <h1>動物認領養小幫手 🐾</h1>
+    <h1>🐾 動物認領養小幫手</h1>
     
     <div class="filter-group">
-        <select id="areaSelect" onchange="loadAnimals()">
-            <option value="">全部地區</option>
+        <select id="areaSelect" onchange="applyFilters()">
+            <option value="">🏠 全部地區</option>
             <option value="2">臺北市</option>
             <option value="3">新北市</option>
             <option value="4">基隆市</option>
@@ -153,14 +195,14 @@
             <option value="23">連江縣</option>
         </select>
 
-        <select id="typeSelect" onchange="loadAnimals()">
-            <option value="">全部類型</option>
+        <select id="typeSelect" onchange="applyFilters()">
+            <option value="">🐶 全部類型</option>
             <option value="狗">狗狗</option>
             <option value="貓">貓咪</option>
         </select>
 
-        <select id="colorSelect" onchange="loadAnimals()">
-            <option value="">全部顏色</option>
+        <select id="colorSelect" onchange="applyFilters()">
+            <option value="">🎨 全部顏色</option>
             <option value="黑色">黑色</option>
             <option value="白色">白色</option>
             <option value="虎斑">虎斑</option>
@@ -170,123 +212,141 @@
             <option value="花色">花色</option>
         </select>
 
-        <select id="genderSelect" onchange="loadAnimals()">
-            <option value="">全部性別</option>
+        <select id="genderSelect" onchange="applyFilters()">
+            <option value="">⚧️ 全部性別</option>
             <option value="M">男生</option>
             <option value="F">女生</option>
         </select>
 
-        <button onclick="filterOldestAnimals()">篩選入所最久</button>
+        <button onclick="sortOldest()">⏳ 篩選入所最久</button>
     </div>
 
-    <div class="loading-bar" id="loadingBar"></div>
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+        <div id="loadingText">正在尋找毛小孩...</div>
+    </div>
 
     <div class="gallery" id="gallery"></div>
-
     <div class="pagination" id="pagination"></div>
 
     <script>
-        let allAnimals = [];
+        let rawData = [];      // 存放從 API 抓回來的原始資料
+        let displayData = [];  // 存放經過篩選後要顯示的資料
         let currentPage = 1;
-        const itemsPerPage = 24; 
+        const itemsPerPage = 24;
 
-        function showLoading() {
-            document.getElementById('loadingBar').style.display = 'block';
-            document.getElementById('gallery').style.opacity = '0.5';
+        // 初始化：一進來就抓取大量資料
+        async function fetchAllData() {
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            loadingOverlay.style.display = 'flex';
+            
+            try {
+                // 策略：一次抓取 2000 筆 "開放認養(OPEN)" 的資料，不分地區
+                // 這樣我們就可以在本地端自由篩選，不受 API 限制
+                const apiUrl = `https://data.moa.gov.tw/Service/OpenData/TransService.aspx?UnitId=QcbUEzN6E6DL&$filter=animal_status eq 'OPEN'&$top=2000`;
+                
+                const response = await fetch(apiUrl);
+                if (!response.ok) throw new Error('網路回應異常');
+                
+                rawData = await response.json();
+                
+                // 初始顯示
+                applyFilters();
+                
+            } catch (error) {
+                console.error('資料抓取失敗:', error);
+                document.getElementById('gallery').innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #666;">⚠️ 資料載入失敗，請檢查網路或稍後再試。<br>政府資料庫可能暫時無法連線。</div>';
+            } finally {
+                loadingOverlay.style.display = 'none';
+            }
         }
 
-        function hideLoading() {
-            document.getElementById('loadingBar').style.display = 'none';
-            document.getElementById('gallery').style.opacity = '1';
-        }
-
-        async function loadAnimals() {
-            showLoading();
-
+        // 核心功能：本地篩選
+        function applyFilters() {
             const area = document.getElementById('areaSelect').value;
             const type = document.getElementById('typeSelect').value;
             const color = document.getElementById('colorSelect').value;
             const gender = document.getElementById('genderSelect').value;
 
-            // 構建 API 篩選條件
-            let filters = [`animal_status eq 'OPEN'`];
-            
-            // 修正：這裡將地區代碼加上了單引號 '${area}'，因為資料庫將其視為文字
-            if (area) filters.push(`animal_area_pkid eq '${area}'`);
-            if (type) filters.push(`animal_kind eq '${type}'`);
-            if (color) filters.push(`animal_colour eq '${color}'`);
-            if (gender) filters.push(`animal_sex eq '${gender}'`);
+            // 使用 JavaScript 的 filter 功能，比 API 更穩定
+            displayData = rawData.filter(animal => {
+                // 地區篩選 (注意：API 回傳的可能是數字或字串，這裡用 == 比較安全)
+                if (area && animal.animal_area_pkid != area) return false;
+                // 類型篩選
+                if (type && animal.animal_kind !== type) return false;
+                // 顏色篩選
+                if (color && animal.animal_colour !== color) return false;
+                // 性別篩選
+                if (gender && animal.animal_sex !== gender) return false;
+                
+                return true;
+            });
 
-            try {
-                // 加上 timestamp 防止瀏覽器快取舊資料
-                const apiUrl = `https://data.moa.gov.tw/Service/OpenData/TransService.aspx?UnitId=QcbUEzN6E6DL&$filter=${encodeURIComponent(filters.join(' and '))}&$top=1000`;
-                
-                const response = await fetch(apiUrl);
-                if (!response.ok) throw new Error('Network response was not ok');
-                
-                const data = await response.json();
-                allAnimals = data;
-                
-                if (allAnimals.length === 0) {
-                    document.getElementById('gallery').innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 20px;">查無資料，請嘗試放寬篩選條件。</div>';
-                    document.getElementById('pagination').innerHTML = '';
-                } else {
-                    currentPage = 1;
-                    renderGallery();
-                    renderPagination();
-                }
-            } catch (error) {
-                console.error('資料加載失敗:', error);
-                document.getElementById('gallery').innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: red;">資料加載失敗，可能是 API 暫時無法連線。</div>';
-            } finally {
-                hideLoading();
-            }
-        }
-
-        function filterOldestAnimals() {
-            if (allAnimals.length === 0) {
-                alert('請先載入動物資料！');
-                return;
-            }
-            // 按入所日期排序（舊到新）
-            allAnimals.sort((a, b) => new Date(a.animal_createtime) - new Date(b.animal_createtime));
             currentPage = 1;
             renderGallery();
             renderPagination();
         }
 
+        // 排序：入所最久
+        function sortOldest() {
+            displayData.sort((a, b) => new Date(a.animal_createtime) - new Date(b.animal_createtime));
+            currentPage = 1;
+            renderGallery();
+            renderPagination();
+        }
+
+        // 渲染畫面
         function renderGallery() {
             const gallery = document.getElementById('gallery');
+            
+            if (displayData.length === 0) {
+                gallery.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #666; font-size: 18px;">🐕 找不到符合條件的毛小孩，試試看放寬條件吧！</div>';
+                return;
+            }
+
             const start = (currentPage - 1) * itemsPerPage;
             const end = start + itemsPerPage;
-            const animalsToShow = allAnimals.slice(start, end);
+            const animalsToShow = displayData.slice(start, end);
 
             gallery.innerHTML = animalsToShow.map(animal => {
-                // 修正：強制將 http 圖片轉為 https，避免在 GitHub Pages 顯示錯誤
+                // 圖片網址處理
                 let imgUrl = animal.album_file || '';
                 if (imgUrl && imgUrl.startsWith('http:')) {
                     imgUrl = imgUrl.replace('http:', 'https:');
                 }
-                if (!imgUrl) imgUrl = 'https://via.placeholder.com/300x200?text=無照片';
+                if (!imgUrl) imgUrl = 'https://via.placeholder.com/300x220?text=無照片';
 
-                const sexIcon = animal.animal_sex === 'M' ? '♂ 男生' : (animal.animal_sex === 'F' ? '♀ 女生' : '未標示');
-                
+                // 性別顯示
+                const isMale = animal.animal_sex === 'M';
+                const isFemale = animal.animal_sex === 'F';
+                const sexText = isMale ? '♂ 男生' : (isFemale ? '♀ 女生' : '❓ 未標示');
+                const sexClass = isMale ? 'gender-m' : (isFemale ? 'gender-f' : '');
+
+                // 修正連結：改為全國動物收容系統公開網址
+                const detailLink = `https://www.pet.gov.tw/Web/Detail.aspx?ID=${animal.animal_id}`;
+
                 return `
-                <div class="animal-card" onclick="window.open('https://asms.moa.gov.tw/Ams/pet_view.aspx?id=${animal.animal_id}&subid=${animal.animal_subid}', '_blank')">
-                    <img src="${imgUrl}" class="animal-img" loading="lazy" alt="${animal.animal_Variety}" onerror="this.src='https://via.placeholder.com/300x200?text=圖片無法讀取'">
+                <div class="animal-card" onclick="window.open('${detailLink}', '_blank')">
+                    <img src="${imgUrl}" class="animal-img" loading="lazy" alt="${animal.animal_Variety}" onerror="this.src='https://via.placeholder.com/300x220?text=圖片失效'">
                     <div class="animal-info">
-                        <span class="tag">${animal.animal_kind}</span>
-                        <span class="tag" style="background:${animal.animal_sex === 'M' ? '#e3f2fd' : '#fce4ec'}; color:${animal.animal_sex === 'M' ? '#1565c0' : '#c2185b'}">${sexIcon}</span>
-                        <div style="font-weight:bold; margin: 5px 0; font-size: 16px;">${animal.animal_place || animal.shelter_name}</div>
-                        <div style="color: #666; font-size: 13px;">品種：${animal.animal_Variety} / ${animal.animal_colour}</div>
-                        <div style="color: #888; margin-top: 5px; font-size: 12px;">入所：${animal.animal_createtime}</div>
+                        <div class="tag-container">
+                            <span class="tag">${animal.animal_kind}</span>
+                            <span class="tag ${sexClass}">${sexText}</span>
+                        </div>
+                        <div class="shelter-name" title="${animal.animal_place || animal.shelter_name}">${animal.animal_place || animal.shelter_name}</div>
+                        <div style="color: #666; font-size: 13px; margin-bottom: 4px;">品種：${animal.animal_Variety} / ${animal.animal_colour}</div>
+                        <div style="color: #999; font-size: 12px;">入所日期：${animal.animal_createtime}</div>
                     </div>
                 </div>
             `}).join('');
+            
+            // 每次渲染後滾動到頂部
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
+        // 分頁功能
         function renderPagination() {
-            const totalPages = Math.ceil(allAnimals.length / itemsPerPage);
+            const totalPages = Math.ceil(displayData.length / itemsPerPage);
             const pagination = document.getElementById('pagination');
             pagination.innerHTML = '';
 
@@ -304,7 +364,7 @@
             const prevButton = document.createElement('button');
             prevButton.textContent = '«';
             prevButton.disabled = currentPage === 1;
-            prevButton.onclick = () => { if(currentPage > 1) { currentPage--; updateUI(); } };
+            prevButton.onclick = () => { if(currentPage > 1) { currentPage--; renderGallery(); renderPagination(); } };
             pagination.appendChild(prevButton);
 
             // 頁碼
@@ -312,7 +372,7 @@
                 const button = document.createElement('button');
                 button.textContent = i;
                 button.className = i === currentPage ? 'active' : '';
-                button.onclick = () => { currentPage = i; updateUI(); };
+                button.onclick = () => { currentPage = i; renderGallery(); renderPagination(); };
                 pagination.appendChild(button);
             }
 
@@ -320,18 +380,12 @@
             const nextButton = document.createElement('button');
             nextButton.textContent = '»';
             nextButton.disabled = currentPage === totalPages;
-            nextButton.onclick = () => { if(currentPage < totalPages) { currentPage++; updateUI(); } };
+            nextButton.onclick = () => { if(currentPage < totalPages) { currentPage++; renderGallery(); renderPagination(); } };
             pagination.appendChild(nextButton);
         }
 
-        function updateUI() {
-            renderGallery();
-            renderPagination();
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-
-        // 初始化
-        loadAnimals();
+        // 啟動程式
+        fetchAllData();
     </script>
 </body>
 </html>
