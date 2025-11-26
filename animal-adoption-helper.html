@@ -240,14 +240,6 @@
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* 狀態列 */
-        .status-bar {
-            position: fixed; bottom: 10px; right: 10px;
-            font-size: 12px; color: #aaa; background: rgba(255,255,255,0.8);
-            padding: 5px 10px; border-radius: 20px;
-            pointer-events: none;
-        }
-
         @media (max-width: 600px) {
             .filter-group { flex-direction: column; }
             select, button { width: 100%; }
@@ -320,7 +312,6 @@
 
     <div class="gallery" id="gallery"></div>
     <div class="pagination" id="pagination"></div>
-    <div id="statusBar" class="status-bar"></div>
 
     <div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
         <div class="modal-content">
@@ -335,56 +326,32 @@
         let displayData = [];
         let currentPage = 1;
         const itemsPerPage = 24;
-        let isSortAscending = true;
+        let isSortAscending = true; // true = 舊到新 (最久先)
 
-        // 智慧型資料抓取 (Smart Fetch)
+        // 核心邏輯：回到最穩定的「一次抓取 + 本地篩選」
+        // 將數量提升至 3000，確保新竹資料能被抓到
         async function fetchAllData() {
             const loadingOverlay = document.getElementById('loadingOverlay');
-            const loadingText = document.getElementById('loadingText');
             loadingOverlay.style.display = 'flex';
             
-            // 策略：先嘗試抓 3000 筆 (足夠覆蓋大部分需求)
-            // 如果失敗 (API 超時/錯誤)，自動降級抓 1000 筆 (保證有資料)
-            const targets = [3000, 1000];
-            let success = false;
-
-            for (let limit of targets) {
-                if (success) break;
-                try {
-                    loadingText.textContent = `正在連線資料庫 (嘗試載入 ${limit} 筆)...`;
-                    
-                    // 加上 timestamp 防止快取
-                    const apiUrl = `https://data.moa.gov.tw/Service/OpenData/TransService.aspx?UnitId=QcbUEzN6E6DL&$filter=animal_status eq 'OPEN'&$top=${limit}&_=${new Date().getTime()}`;
-                    
-                    const response = await fetch(apiUrl);
-                    if (!response.ok) throw new Error('Network fail');
-                    
-                    const data = await response.json();
-                    
-                    // 檢查是否真的有抓到資料
-                    if (data && data.length > 0) {
-                        rawData = data;
-                        success = true;
-                        document.getElementById('statusBar').textContent = `已成功載入 ${data.length} 筆資料`;
-                    }
-                } catch (e) {
-                    console.log(`Fetch ${limit} failed, trying next...`);
-                }
-            }
-
-            loadingOverlay.style.display = 'none';
-
-            if (success) {
-                applyFilters();
-            } else {
-                document.getElementById('gallery').innerHTML = `
-                    <div style="text-align:center; grid-column:1/-1; padding:30px; color:#d32f2f;">
-                        ⚠️ 政府資料庫連線逾時，請檢查網路或稍後再重新整理頁面。
-                    </div>`;
+            try {
+                // 強制抓取 3000 筆資料，不做任何篩選 (只篩選 OPEN)
+                const apiUrl = `https://data.moa.gov.tw/Service/OpenData/TransService.aspx?UnitId=QcbUEzN6E6DL&$filter=animal_status eq 'OPEN'&$top=3000`;
+                const response = await fetch(apiUrl);
+                if (!response.ok) throw new Error('API Error');
+                
+                rawData = await response.json();
+                applyFilters(); 
+                
+            } catch (error) {
+                console.error(error);
+                document.getElementById('gallery').innerHTML = '<div style="text-align:center; grid-column:1/-1; padding:30px;">⚠️ 無法連線至資料庫，請稍後再試。</div>';
+            } finally {
+                loadingOverlay.style.display = 'none';
             }
         }
 
-        // 本地篩選 (最穩定，不受伺服器語法限制)
+        // 本地篩選 (最穩定)
         function applyFilters() {
             const area = document.getElementById('areaSelect').value;
             const type = document.getElementById('typeSelect').value;
@@ -392,7 +359,7 @@
             const gender = document.getElementById('genderSelect').value;
 
             displayData = rawData.filter(animal => {
-                // 強制轉型 String 比對，解決 "2" != 2 的問題
+                // 強制轉型 String 比對，避免 "2" != 2
                 if (area && String(animal.animal_area_pkid) !== String(area)) return false;
                 
                 if (type) {
@@ -405,7 +372,6 @@
 
                 if (color && animal.animal_colour !== color) return false;
                 if (gender && animal.animal_sex !== gender) return false;
-                
                 return true;
             });
 
@@ -449,7 +415,7 @@
             const gallery = document.getElementById('gallery');
             
             if (displayData.length === 0) {
-                gallery.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #888;">🐕 找不到符合條件的毛小孩，試試看放寬條件吧！</div>';
+                gallery.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #888; font-size: 18px;">🐕 找不到符合條件的毛小孩，試試看放寬條件吧！</div>';
                 document.getElementById('pagination').innerHTML = '';
                 return;
             }
