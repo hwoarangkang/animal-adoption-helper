@@ -23,7 +23,7 @@
             text-shadow: 1px 1px 3px rgba(0,0,0,0.1);
         }
         
-        /* --- 篩選區塊 --- */
+        /* 篩選區塊 */
         .filter-group {
             display: flex;
             gap: 10px;
@@ -57,7 +57,7 @@
         button.sort-btn:hover { background: #43a047; transform: translateY(-1px); }
         button.sort-btn.active { background: #2e7d32; }
 
-        /* --- 卡片網格 --- */
+        /* 卡片網格 */
         .gallery {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
@@ -86,7 +86,6 @@
         }
         .animal-info { padding: 12px; }
         
-        /* 標籤樣式 */
         .tag-row { display: flex; gap: 6px; margin-bottom: 6px; }
         .tag { padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; }
         .tag.dog { background: #fff3e0; color: #ef6c00; }
@@ -101,7 +100,7 @@
         }
         .days-count { color: #d32f2f; font-weight: bold; font-size: 12px; margin-top: 6px; }
 
-        /* --- 彈出視窗 (緊湊版) --- */
+        /* 彈出視窗 */
         .modal-overlay {
             display: none;
             position: fixed;
@@ -146,7 +145,7 @@
             padding: 0;
         }
 
-        /* 電腦版：左圖右文 */
+        /* 左圖右文 */
         @media (min-width: 768px) {
             .modal-body {
                 flex-direction: row;
@@ -174,7 +173,7 @@
             }
         }
 
-        /* 手機版：緊湊上下 */
+        /* 手機版 */
         @media (max-width: 767px) {
             .modal-body { flex-direction: column; }
             .modal-left { width: 100%; height: 250px; background: #000; }
@@ -200,9 +199,8 @@
             border-bottom: 1px dashed #eee;
             padding-bottom: 3px;
         }
-        .info-label { color: #888; width: 85px; flex-shrink: 0; }
-        .info-value { font-weight: bold; color: #333; word-break: break-all;}
-        
+        .info-label { color: #888; width: 90px; flex-shrink: 0; }
+        .info-value { font-weight: bold; color: #333; word-break: break-word;} /* 允許長文字換行 */
         .full-width { grid-column: 1 / -1; }
 
         .btn-group {
@@ -218,12 +216,14 @@
             cursor: pointer; font-weight: bold; border: none;
             display: flex; align-items: center; justify-content: center; gap: 5px;
             font-size: 13px;
+            transition: all 0.2s;
         }
         .btn-copy { background: #1877F2; }
+        .btn-copy.success { background: #4CAF50; pointer-events: none; } /* 複製成功樣式 */
         .btn-img { background: #FF9800; }
         .tip-text { text-align: center; font-size: 11px; color: #999; margin-top: 5px; }
 
-        /* --- 分頁與讀取 --- */
+        /* 分頁與讀取 */
         .pagination { display: flex; justify-content: center; gap: 5px; margin-top: 30px; padding-bottom: 30px; }
         .pagination button { min-width: 35px; background: white; color: #333; padding: 5px 10px; }
         .pagination button.active { background: #4CAF50; color: white; border-color: #4CAF50; }
@@ -328,7 +328,7 @@
         const itemsPerPage = 24;
         let isSortAscending = true; 
 
-        // 核心邏輯：一次抓 2000 筆 + 本地篩選 (您原本能跑的版本)
+        // ⚠️ 核心邏輯：保持最穩定的版本 (一次抓 2000 筆)
         async function fetchAllData() {
             const loadingOverlay = document.getElementById('loadingOverlay');
             loadingOverlay.style.display = 'flex';
@@ -405,6 +405,33 @@
             return Math.floor(diff / (1000 * 60 * 60 * 24));
         }
 
+        // 新增：計算詳細時間 (年/月/日)
+        function getDetailedDuration(dateString) {
+            const start = new Date(dateString);
+            const now = new Date();
+            let years = now.getFullYear() - start.getFullYear();
+            let months = now.getMonth() - start.getMonth();
+            let days = now.getDate() - start.getDate();
+
+            if (days < 0) {
+                months--;
+                // 計算上個月有幾天
+                const prevMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+                days += prevMonth.getDate();
+            }
+            if (months < 0) {
+                years--;
+                months += 12;
+            }
+
+            let result = "";
+            if (years > 0) result += `${years} 年 `;
+            if (months > 0) result += `${months} 個月 `;
+            if (days > 0) result += `${days} 天`;
+            
+            return result || "不到 1 天";
+        }
+
         function renderGallery() {
             const gallery = document.getElementById('gallery');
             
@@ -427,18 +454,17 @@
                 const genderTag = animal.animal_sex === 'M' ? '<span class="tag male">♂ 男生</span>' : (animal.animal_sex === 'F' ? '<span class="tag female">♀ 女生</span>' : '');
                 
                 let typeTag = '';
-                if (animal.animal_kind === '狗') typeTag = '<span class="tag dog">🐶</span>';
-                else if (animal.animal_kind === '貓') typeTag = '<span class="tag cat">🐱</span>';
-                else typeTag = `<span class="tag other">${animal.animal_kind}</span>`;
+                if (animal.animal_kind === '狗') typeTag = '<span class="tag dog">🐶 狗狗</span>';
+                else if (animal.animal_kind === '貓') typeTag = '<span class="tag cat">🐱 貓咪</span>';
+                else typeTag = `<span class="tag other">🐾 ${animal.animal_kind}</span>`;
 
-                // 注意：這裡傳入的 start + index 是為了對應 displayData 的正確索引
                 return `
                 <div class="animal-card" onclick="openModal(${start + index})">
                     <img src="${imgUrl}" class="animal-img" loading="lazy" alt="animal">
                     <div class="animal-info">
                         <div class="tag-row">${typeTag} ${genderTag}</div>
                         <div class="shelter-name">${animal.animal_place || animal.shelter_name}</div>
-                        <div style="font-size:13px; color:#666;">${animal.animal_Variety} / ${animal.animal_colour}</div>
+                        <div style="font-size:13px; color:#666;">${animal.animal_Variety ? animal.animal_Variety.trim() : '米克斯'} / ${animal.animal_colour}</div>
                         <div class="days-count">🕒 已等待 ${days} 天</div>
                     </div>
                 </div>
@@ -485,19 +511,30 @@
             pagination.appendChild(nextButton);
         }
 
-        // --- 彈出視窗 (緊湊排版 + 完整資訊) ---
+        // --- Modal 功能 (整合所有新需求) ---
         function openModal(index) {
             const animal = displayData[index];
             if (!animal) return;
 
             const days = calculateDays(animal.animal_createtime);
+            const durationText = getDetailedDuration(animal.animal_createtime); // 換算年月日
+            
             let imgUrl = animal.album_file || '';
             if (imgUrl.startsWith('http:')) imgUrl = imgUrl.replace('http:', 'https:');
             
+            // 稱呼邏輯
             const sibling = animal.animal_sex === 'M' ? '弟弟' : (animal.animal_sex === 'F' ? '妹妹' : '毛孩');
             const sexText = animal.animal_sex === 'M' ? '男生' : (animal.animal_sex === 'F' ? '女生' : '未標示');
             
-            const fbText = `【認養文】求分享 🏠\n這隻可愛的${animal.animal_Variety}${sibling}已經在${animal.animal_place || animal.shelter_name}等家 ${days} 天了！\n\n🐾 編號：${animal.animal_id}\n🐾 性別：${sexText}\n🐾 毛色：${animal.animal_colour}\n🐾 地點：${animal.shelter_address || animal.shelter_name}\n🐾 電話：${animal.shelter_tel}\n\n#領養代替購買 #動物認養`;
+            // 去除品種空白 (修正「混種犬     」的問題)
+            const variety = animal.animal_Variety ? animal.animal_Variety.trim() : '米克斯';
+            const place = animal.animal_place || animal.shelter_name;
+
+            // 優先使用收容編號 (subid)，沒有才用系統編號 (id)
+            const displayId = animal.animal_subid && animal.animal_subid.trim() !== '' ? animal.animal_subid : animal.animal_id;
+
+            // FB 文案 (已修正格式)
+            const fbText = `【認養文】求分享 🏠\n這隻可愛的${variety}${sibling}已經在${place}等家 ${days} 天了！\n\n🐾 編號：${displayId}\n🐾 性別：${sexText}\n🐾 毛色：${animal.animal_colour}\n🐾 認養日期：${animal.animal_opendate} 後\n🐾 地點：${animal.shelter_address || '請洽收容所'}\n🐾 電話：${animal.shelter_tel}\n\n#領養代替購買 #動物認養`;
 
             const modalBody = document.getElementById('modalBody');
             
@@ -507,12 +544,18 @@
                 </div>
                 <div class="modal-right">
                     <div>
-                        <div class="modal-title">${animal.animal_place || animal.shelter_name}</div>
+                        <div class="modal-title">${place}</div>
                         <div class="info-grid">
-                            <div class="info-item full-width"><span class="info-label">開放認養</span><span class="info-value" style="color:#2e7d32">適合認養 ( ${animal.animal_opendate} )</span></div>
-                            <div class="info-item"><span class="info-label">收容編號</span><span class="info-value">${animal.animal_subid || animal.animal_id}</span></div>
-                            <div class="info-item"><span class="info-label">入所天數</span><span class="info-value" style="color:#d32f2f">${days} 天</span></div>
-                            <div class="info-item"><span class="info-label">品種</span><span class="info-value">${animal.animal_Variety}</span></div>
+                            <div class="info-item full-width">
+                                <span class="info-label">開放認養</span>
+                                <span class="info-value" style="color:#2e7d32">適合認養 ( ${animal.animal_opendate} )</span>
+                            </div>
+                            <div class="info-item"><span class="info-label">收容編號</span><span class="info-value">${displayId}</span></div>
+                            <div class="info-item"><span class="info-label">入所日期</span><span class="info-value">${animal.animal_createtime}</span></div>
+                            <div class="info-item"><span class="info-label">入所天數</span><span class="info-value" style="color:#d32f2f">${days} 天 (${durationText})</span></div>
+                            <div class="info-item"><span class="info-label">來源行政區</span><span class="info-value">${animal.animal_foundplace}</span></div>
+                            <div class="info-item"><span class="info-label">公告收容所</span><span class="info-value">${place}</span></div>
+                            <div class="info-item"><span class="info-label">品種</span><span class="info-value">${variety}</span></div>
                             <div class="info-item"><span class="info-label">性別</span><span class="info-value">${sexText}</span></div>
                             <div class="info-item"><span class="info-label">毛色</span><span class="info-value">${animal.animal_colour}</span></div>
                             <div class="info-item"><span class="info-label">電話</span><span class="info-value">${animal.shelter_tel}</span></div>
@@ -523,7 +566,7 @@
                     
                     <div>
                         <div class="btn-group">
-                            <button class="action-btn btn-copy" onclick="copyToClipboard(\`${fbText.replace(/`/g, '\\`')}\`)">
+                            <button id="copyBtn" class="action-btn btn-copy" onclick="copyToClipboard(\`${fbText.replace(/`/g, '\\`')}\`)">
                                 📋 複製認養文
                             </button>
                             <button class="action-btn btn-img" onclick="window.open('${imgUrl}', '_blank')">
@@ -546,9 +589,19 @@
             }
         }
 
+        // 修正：不跳出 alert，直接改變按鈕樣式
         function copyToClipboard(text) {
             navigator.clipboard.writeText(text).then(() => {
-                alert('✅ 認養文已複製！');
+                const btn = document.getElementById('copyBtn');
+                const originalText = btn.innerHTML;
+                
+                btn.innerHTML = '✅ 已複製';
+                btn.classList.add('success');
+                
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                    btn.classList.remove('success');
+                }, 1500);
             }).catch(err => {
                 alert('複製失敗，請手動複製。');
             });
