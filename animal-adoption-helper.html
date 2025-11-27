@@ -41,7 +41,7 @@
             border: 1px solid #e1e4e8;
             border-radius: 8px;
             font-size: 14px;
-            min-width: 120px;
+            min-width: 110px; /* 稍微縮窄一點以容納更多選項 */
             background-color: white;
             transition: all 0.2s ease;
         }
@@ -53,6 +53,7 @@
             border: none;
             cursor: pointer;
             font-weight: bold;
+            min-width: 140px;
         }
         button.sort-btn:hover { background: #43a047; transform: translateY(-1px); }
         button.sort-btn.active { background: #2e7d32; }
@@ -86,13 +87,14 @@
         }
         .animal-info { padding: 12px; }
         
-        .tag-row { display: flex; gap: 6px; margin-bottom: 6px; }
+        .tag-row { display: flex; gap: 6px; margin-bottom: 6px; flex-wrap: wrap; }
         .tag { padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; }
         .tag.dog { background: #fff3e0; color: #ef6c00; }
         .tag.cat { background: #f3e5f5; color: #8e24aa; }
         .tag.other { background: #e0f2f1; color: #00695c; }
         .tag.male { background: #e3f2fd; color: #1976d2; }
         .tag.female { background: #fce4ec; color: #c2185b; }
+        .tag.info { background: #f5f5f5; color: #666; } /* 新增一般資訊標籤 */
         
         .shelter-name {
             font-size: 14px; font-weight: bold; color: #2c3e50;
@@ -100,7 +102,7 @@
         }
         .days-count { color: #d32f2f; font-weight: bold; font-size: 12px; margin-top: 6px; }
 
-        /* 彈出視窗 */
+        /* 彈出視窗 (緊湊版樣式) */
         .modal-overlay {
             display: none;
             position: fixed;
@@ -145,11 +147,11 @@
             padding: 0;
         }
 
-        /* 左圖右文 */
+        /* 電腦版：左圖右文 */
         @media (min-width: 768px) {
             .modal-body {
                 flex-direction: row;
-                height: 550px; /* 稍微加高以容納更多欄位 */
+                height: 550px;
             }
             .modal-left {
                 width: 45%;
@@ -173,7 +175,7 @@
             }
         }
 
-        /* 手機版 */
+        /* 手機版：緊湊上下 */
         @media (max-width: 767px) {
             .modal-body { flex-direction: column; }
             .modal-left { width: 100%; height: 250px; background: #000; }
@@ -199,8 +201,8 @@
             border-bottom: 1px dashed #eee;
             padding-bottom: 3px;
         }
-        .info-label { color: #888; width: 95px; flex-shrink: 0; } /* 稍微加寬標籤 */
-        .info-value { font-weight: bold; color: #333; word-break: break-word;}
+        .info-label { color: #888; width: 90px; flex-shrink: 0; }
+        .info-value { font-weight: bold; color: #333; word-break: break-all;}
         .full-width { grid-column: 1 / -1; }
 
         .btn-group {
@@ -283,6 +285,20 @@
             <option value="其他">其他動物</option>
         </select>
 
+        <select id="bodySelect" onchange="applyFilters()">
+            <option value="">📏 全部體型</option>
+            <option value="MINI">迷你</option>
+            <option value="SMALL">小型</option>
+            <option value="MEDIUM">中型</option>
+            <option value="BIG">大型</option>
+        </select>
+
+        <select id="ageSelect" onchange="applyFilters()">
+            <option value="">🎂 全部年紀</option>
+            <option value="CHILD">幼年</option>
+            <option value="ADULT">成年</option>
+        </select>
+
         <select id="colorSelect" onchange="applyFilters()">
             <option value="">🎨 全部顏色</option>
             <option value="黑色">黑色</option>
@@ -316,7 +332,8 @@
     <div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
         <div class="modal-content">
             <div class="close-btn" onclick="closeModal('force')">×</div>
-            <div class="modal-body" id="modalBody"></div>
+            <div class="modal-body" id="modalBody">
+                </div>
         </div>
     </div>
 
@@ -325,10 +342,10 @@
         let displayData = [];
         let currentPage = 1;
         const itemsPerPage = 24;
-        let isSortAscending = true;
+        let isSortAscending = true; 
         let currentFBText = ""; 
 
-        // 核心邏輯：維持穩定版
+        // 核心邏輯：保持最穩定的版本 (一次抓 2000 筆)
         async function fetchAllData() {
             const loadingOverlay = document.getElementById('loadingOverlay');
             loadingOverlay.style.display = 'flex';
@@ -352,11 +369,14 @@
         function applyFilters() {
             const area = document.getElementById('areaSelect').value;
             const type = document.getElementById('typeSelect').value;
+            const body = document.getElementById('bodySelect').value;
+            const age = document.getElementById('ageSelect').value;
             const color = document.getElementById('colorSelect').value;
             const gender = document.getElementById('genderSelect').value;
 
             displayData = rawData.filter(animal => {
                 if (area && String(animal.animal_area_pkid) !== String(area)) return false;
+                
                 if (type) {
                     if (type === '其他') {
                         if (animal.animal_kind === '狗' || animal.animal_kind === '貓') return false;
@@ -364,10 +384,14 @@
                         if (animal.animal_kind !== type) return false;
                     }
                 }
+
+                if (body && animal.animal_bodytype !== body) return false;
+                if (age && animal.animal_age !== age) return false;
                 if (color && animal.animal_colour !== color) return false;
                 if (gender && animal.animal_sex !== gender) return false;
                 return true;
             });
+
             executeSort(); 
         }
 
@@ -396,7 +420,6 @@
             return Math.floor((now - start) / (1000 * 60 * 60 * 24));
         }
 
-        // 格式化日期為 YYYY/MM/DD
         function formatDate(dateString) {
             if (!dateString) return "";
             const d = new Date(dateString);
@@ -406,7 +429,6 @@
             return `${year}/${month}/${day}`;
         }
 
-        // 詳細時間計算 (去除空格)
         function getDetailedDuration(dateString) {
             const start = new Date(dateString);
             const now = new Date();
@@ -428,6 +450,18 @@
             if (months > 0) result += `${months}個月`;
             if (days > 0) result += `${days}天`;
             return result || "不到1天";
+        }
+
+        // 轉換體型代碼為中文
+        function getBodyType(code) {
+            const map = { 'MINI': '迷你', 'SMALL': '小型', 'MEDIUM': '中型', 'BIG': '大型' };
+            return map[code] || '未標示';
+        }
+
+        // 轉換年紀代碼為中文
+        function getAge(code) {
+            const map = { 'CHILD': '幼年', 'ADULT': '成年' };
+            return map[code] || '未標示';
         }
 
         function renderGallery() {
@@ -455,7 +489,9 @@
                 <div class="animal-card" onclick="openModal(${start + index})">
                     <img src="${imgUrl}" class="animal-img" loading="lazy" alt="animal">
                     <div class="animal-info">
-                        <div class="tag-row">${typeTag} ${genderTag}</div>
+                        <div class="tag-row">
+                            ${typeTag} ${genderTag}
+                        </div>
                         <div class="shelter-name">${animal.animal_place || animal.shelter_name}</div>
                         <div style="font-size:13px; color:#666;">${animal.animal_Variety ? animal.animal_Variety.trim() : '米克斯'} / ${animal.animal_colour}</div>
                         <div class="days-count">🕒 已等待 ${days} 天</div>
@@ -492,7 +528,7 @@
             createBtn('»', Math.min(totalPages, currentPage + 1), currentPage === totalPages);
         }
 
-        // --- Modal 功能 (已更新為最新需求) ---
+        // --- Modal 功能 (加入體型與年紀) ---
         function openModal(index) {
             const animal = displayData[index];
             if (!animal) return;
@@ -511,15 +547,18 @@
             const place = animal.animal_place || animal.shelter_name;
             const displayId = animal.animal_subid && animal.animal_subid.trim() !== '' ? animal.animal_subid : animal.animal_id;
             const foundPlace = animal.animal_foundplace || '無資料';
+            
+            // 轉換體型和年紀
+            const bodyType = getBodyType(animal.animal_bodytype);
+            const ageText = getAge(animal.animal_age);
 
-            // FB 文案 (已同步更新)
             currentFBText = `【認養文】求分享 🏠\n這隻可愛的${variety}${sibling}已經在${place}等家${days}天（相當於${durationText}）了！\n\n🐾 收容編號：${displayId}\n🐾 性別：${sexText}\n🐾 毛色：${animal.animal_colour}\n🐾 拾獲地點：${foundPlace}\n🐾 公告收容所：${place}\n🐾 可認養日期：${formattedOpenDate} 後\n🐾 地點：${animal.shelter_address || '請洽收容所'}\n🐾 電話：${animal.shelter_tel}\n\n#領養代替購買 #動物認養`;
 
             const modalBody = document.getElementById('modalBody');
             
             modalBody.innerHTML = `
                 <div class="modal-left">
-                    <img src="${imgUrl}" class="modal-img">
+                    <img src="${imgUrl || 'https://via.placeholder.com/400x300'}" class="modal-img">
                 </div>
                 <div class="modal-right">
                     <div>
@@ -541,6 +580,10 @@
                             <div class="info-item"><span class="info-label">公告收容所</span><span class="info-value">${place}</span></div>
                             <div class="info-item"><span class="info-label">品種</span><span class="info-value">${variety}</span></div>
                             <div class="info-item"><span class="info-label">性別</span><span class="info-value">${sexText}</span></div>
+                            
+                            <div class="info-item"><span class="info-label">體型</span><span class="info-value">${bodyType}</span></div>
+                            <div class="info-item"><span class="info-label">年紀</span><span class="info-value">${ageText}</span></div>
+                            
                             <div class="info-item"><span class="info-label">毛色</span><span class="info-value">${animal.animal_colour}</span></div>
                             <div class="info-item"><span class="info-label">電話</span><span class="info-value">${animal.shelter_tel}</span></div>
                             <div class="info-item full-width"><span class="info-label">地點</span><span class="info-value">${animal.shelter_address || '請洽收容所'}</span></div>
@@ -582,7 +625,6 @@
             }
         }
 
-        // 初始化
         fetchAllData();
     </script>
 </body>
