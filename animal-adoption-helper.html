@@ -149,7 +149,7 @@
         @media (min-width: 768px) {
             .modal-body {
                 flex-direction: row;
-                height: 500px;
+                height: 550px; /* 稍微加高以容納更多欄位 */
             }
             .modal-left {
                 width: 45%;
@@ -199,7 +199,7 @@
             border-bottom: 1px dashed #eee;
             padding-bottom: 3px;
         }
-        .info-label { color: #888; width: 90px; flex-shrink: 0; }
+        .info-label { color: #888; width: 95px; flex-shrink: 0; } /* 稍微加寬標籤 */
         .info-value { font-weight: bold; color: #333; word-break: break-word;}
         .full-width { grid-column: 1 / -1; }
 
@@ -326,9 +326,9 @@
         let currentPage = 1;
         const itemsPerPage = 24;
         let isSortAscending = true;
-        let currentFBText = ""; // 暫存目前的 FB 文案，避免 HTML 屬性衝突
+        let currentFBText = ""; 
 
-        // 核心：保留您驗證過最穩定的版本 (2000筆, 無重試)
+        // 核心邏輯：維持穩定版
         async function fetchAllData() {
             const loadingOverlay = document.getElementById('loadingOverlay');
             loadingOverlay.style.display = 'flex';
@@ -396,6 +396,17 @@
             return Math.floor((now - start) / (1000 * 60 * 60 * 24));
         }
 
+        // 格式化日期為 YYYY/MM/DD
+        function formatDate(dateString) {
+            if (!dateString) return "";
+            const d = new Date(dateString);
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${year}/${month}/${day}`;
+        }
+
+        // 詳細時間計算 (去除空格)
         function getDetailedDuration(dateString) {
             const start = new Date(dateString);
             const now = new Date();
@@ -440,7 +451,6 @@
                 
                 let typeTag = animal.animal_kind === '狗' ? '<span class="tag dog">🐶 狗狗</span>' : (animal.animal_kind === '貓' ? '<span class="tag cat">🐱 貓咪</span>' : `<span class="tag other">🐾 ${animal.animal_kind}</span>`);
 
-                // 注意：這裡的 index 是當前頁面的索引，需要加上 start 才能對應到 displayData
                 return `
                 <div class="animal-card" onclick="openModal(${start + index})">
                     <img src="${imgUrl}" class="animal-img" loading="lazy" alt="animal">
@@ -482,12 +492,16 @@
             createBtn('»', Math.min(totalPages, currentPage + 1), currentPage === totalPages);
         }
 
+        // --- Modal 功能 (已更新為最新需求) ---
         function openModal(index) {
             const animal = displayData[index];
             if (!animal) return;
 
             const days = calculateDays(animal.animal_createtime);
             const durationText = getDetailedDuration(animal.animal_createtime);
+            const formattedOpenDate = formatDate(animal.animal_opendate);
+            const formattedCreateDate = formatDate(animal.animal_createtime);
+
             let imgUrl = animal.album_file || 'https://via.placeholder.com/400x300';
             if (imgUrl.startsWith('http:')) imgUrl = imgUrl.replace('http:', 'https:');
             
@@ -496,11 +510,13 @@
             const variety = animal.animal_Variety ? animal.animal_Variety.trim() : '米克斯';
             const place = animal.animal_place || animal.shelter_name;
             const displayId = animal.animal_subid && animal.animal_subid.trim() !== '' ? animal.animal_subid : animal.animal_id;
+            const foundPlace = animal.animal_foundplace || '無資料';
 
-            // 1. 產生 FB 文案並存入全域變數 (避免在 HTML onclick 中處理字串引發錯誤)
-            currentFBText = `【認養文】求分享 🏠\n這隻可愛的${variety}${sibling}已經在${place}等家${days}天（相當於${durationText}）了！\n\n🐾 收容編號：${displayId}\n🐾 性別：${sexText}\n🐾 毛色：${animal.animal_colour}\n🐾 認養日期：${animal.animal_opendate} 後\n🐾 地點：${animal.shelter_address || '請洽收容所'}\n🐾 電話：${animal.shelter_tel}\n\n#領養代替購買 #動物認養`;
+            // FB 文案 (已同步更新)
+            currentFBText = `【認養文】求分享 🏠\n這隻可愛的${variety}${sibling}已經在${place}等家${days}天（相當於${durationText}）了！\n\n🐾 收容編號：${displayId}\n🐾 性別：${sexText}\n🐾 毛色：${animal.animal_colour}\n🐾 拾獲地點：${foundPlace}\n🐾 公告收容所：${place}\n🐾 可認養日期：${formattedOpenDate} 後\n🐾 地點：${animal.shelter_address || '請洽收容所'}\n🐾 電話：${animal.shelter_tel}\n\n#領養代替購買 #動物認養`;
 
             const modalBody = document.getElementById('modalBody');
+            
             modalBody.innerHTML = `
                 <div class="modal-left">
                     <img src="${imgUrl}" class="modal-img">
@@ -509,10 +525,20 @@
                     <div>
                         <div class="modal-title">${place}</div>
                         <div class="info-grid">
-                            <div class="info-item full-width"><span class="info-label">開放認養</span><span class="info-value" style="color:#2e7d32">適合認養 ( ${animal.animal_opendate} )</span></div>
+                            <div class="info-item full-width">
+                                <span class="info-label">可認養日期</span>
+                                <span class="info-value" style="color:#2e7d32">適合認養 ( ${formattedOpenDate} )</span>
+                            </div>
                             <div class="info-item"><span class="info-label">收容編號</span><span class="info-value">${displayId}</span></div>
-                            <div class="info-item"><span class="info-label">入所日期</span><span class="info-value">${animal.animal_createtime}</span></div>
-                            <div class="info-item full-width"><span class="info-label">入所天數</span><span class="info-value" style="color:#d32f2f">${days} 天（相當於${durationText}）</span></div>
+                            <div class="info-item"><span class="info-label">入所日期</span><span class="info-value">${formattedCreateDate}</span></div>
+                            
+                            <div class="info-item full-width">
+                                <span class="info-label">入所天數</span>
+                                <span class="info-value" style="color:#d32f2f">${days}天（相當於${durationText}）</span>
+                            </div>
+                            
+                            <div class="info-item"><span class="info-label">拾獲地點</span><span class="info-value">${foundPlace}</span></div>
+                            <div class="info-item"><span class="info-label">公告收容所</span><span class="info-value">${place}</span></div>
                             <div class="info-item"><span class="info-label">品種</span><span class="info-value">${variety}</span></div>
                             <div class="info-item"><span class="info-label">性別</span><span class="info-value">${sexText}</span></div>
                             <div class="info-item"><span class="info-label">毛色</span><span class="info-value">${animal.animal_colour}</span></div>
