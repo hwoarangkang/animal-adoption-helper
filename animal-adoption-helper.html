@@ -316,8 +316,7 @@
     <div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
         <div class="modal-content">
             <div class="close-btn" onclick="closeModal('force')">×</div>
-            <div class="modal-body" id="modalBody">
-                </div>
+            <div class="modal-body" id="modalBody"></div>
         </div>
     </div>
 
@@ -326,9 +325,10 @@
         let displayData = [];
         let currentPage = 1;
         const itemsPerPage = 24;
-        let isSortAscending = true; 
+        let isSortAscending = true;
+        let currentFBText = ""; // 暫存目前的 FB 文案，避免 HTML 屬性衝突
 
-        // 核心邏輯：保持您驗證過最穩定的版本 (一次抓 2000 筆)
+        // 核心：保留您驗證過最穩定的版本 (2000筆, 無重試)
         async function fetchAllData() {
             const loadingOverlay = document.getElementById('loadingOverlay');
             loadingOverlay.style.display = 'flex';
@@ -357,7 +357,6 @@
 
             displayData = rawData.filter(animal => {
                 if (area && String(animal.animal_area_pkid) !== String(area)) return false;
-                
                 if (type) {
                     if (type === '其他') {
                         if (animal.animal_kind === '狗' || animal.animal_kind === '貓') return false;
@@ -365,25 +364,18 @@
                         if (animal.animal_kind !== type) return false;
                     }
                 }
-
                 if (color && animal.animal_colour !== color) return false;
                 if (gender && animal.animal_sex !== gender) return false;
                 return true;
             });
-
             executeSort(); 
         }
 
         function toggleSort() {
             isSortAscending = !isSortAscending;
             const btn = document.getElementById('sortBtn');
-            if (isSortAscending) {
-                btn.innerHTML = '⏳ 排序：入所時間 (最久先)';
-                btn.classList.add('active');
-            } else {
-                btn.innerHTML = '🆕 排序：入所時間 (最新先)';
-                btn.classList.remove('active');
-            }
+            btn.innerHTML = isSortAscending ? '⏳ 排序：入所時間 (最久先)' : '🆕 排序：入所時間 (最新先)';
+            btn.classList.toggle('active', isSortAscending);
             executeSort();
         }
 
@@ -401,11 +393,9 @@
         function calculateDays(dateString) {
             const start = new Date(dateString);
             const now = new Date();
-            const diff = now - start;
-            return Math.floor(diff / (1000 * 60 * 60 * 24));
+            return Math.floor((now - start) / (1000 * 60 * 60 * 24));
         }
 
-        // 計算詳細時間 (修正：不留空白)
         function getDetailedDuration(dateString) {
             const start = new Date(dateString);
             const now = new Date();
@@ -415,8 +405,7 @@
 
             if (days < 0) {
                 months--;
-                const prevMonth = new Date(now.getFullYear(), now.getMonth(), 0);
-                days += prevMonth.getDate();
+                days += new Date(now.getFullYear(), now.getMonth(), 0).getDate();
             }
             if (months < 0) {
                 years--;
@@ -427,15 +416,13 @@
             if (years > 0) result += `${years}年`;
             if (months > 0) result += `${months}個月`;
             if (days > 0) result += `${days}天`;
-            
             return result || "不到1天";
         }
 
         function renderGallery() {
             const gallery = document.getElementById('gallery');
-            
             if (displayData.length === 0) {
-                gallery.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #888; font-size: 18px;">🐕 找不到符合條件的毛小孩，試試看放寬條件吧！</div>';
+                gallery.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #888;">🐕 找不到符合條件的毛小孩，試試看放寬條件吧！</div>';
                 document.getElementById('pagination').innerHTML = '';
                 return;
             }
@@ -445,18 +432,15 @@
             const animalsToShow = displayData.slice(start, end);
 
             gallery.innerHTML = animalsToShow.map((animal, index) => {
-                let imgUrl = animal.album_file || '';
+                let imgUrl = animal.album_file || 'https://via.placeholder.com/300x220?text=無照片';
                 if (imgUrl.startsWith('http:')) imgUrl = imgUrl.replace('http:', 'https:');
-                if (!imgUrl) imgUrl = 'https://via.placeholder.com/300x220?text=無照片';
 
                 const days = calculateDays(animal.animal_createtime);
                 const genderTag = animal.animal_sex === 'M' ? '<span class="tag male">♂ 男生</span>' : (animal.animal_sex === 'F' ? '<span class="tag female">♀ 女生</span>' : '');
                 
-                let typeTag = '';
-                if (animal.animal_kind === '狗') typeTag = '<span class="tag dog">🐶 狗狗</span>';
-                else if (animal.animal_kind === '貓') typeTag = '<span class="tag cat">🐱 貓咪</span>';
-                else typeTag = `<span class="tag other">🐾 ${animal.animal_kind}</span>`;
+                let typeTag = animal.animal_kind === '狗' ? '<span class="tag dog">🐶 狗狗</span>' : (animal.animal_kind === '貓' ? '<span class="tag cat">🐱 貓咪</span>' : `<span class="tag other">🐾 ${animal.animal_kind}</span>`);
 
+                // 注意：這裡的 index 是當前頁面的索引，需要加上 start 才能對應到 displayData
                 return `
                 <div class="animal-card" onclick="openModal(${start + index})">
                     <img src="${imgUrl}" class="animal-img" loading="lazy" alt="animal">
@@ -472,80 +456,86 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        // --- Modal 功能 (同步欄位名稱與FB文案) ---
+        function renderPagination() {
+            if (displayData.length === 0) return;
+            const totalPages = Math.ceil(displayData.length / itemsPerPage);
+            const pagination = document.getElementById('pagination');
+            pagination.innerHTML = '';
+            if (totalPages <= 1) return;
+
+            const maxButtons = 5;
+            let startPage = Math.max(1, currentPage - Math.floor(maxButtons / 2));
+            let endPage = Math.min(totalPages, startPage + maxButtons - 1);
+            if (endPage - startPage + 1 < maxButtons) startPage = Math.max(1, endPage - maxButtons + 1);
+
+            const createBtn = (text, page, disabled) => {
+                const btn = document.createElement('button');
+                btn.textContent = text;
+                btn.disabled = disabled;
+                btn.className = page === currentPage ? 'active' : '';
+                btn.onclick = () => { currentPage = page; renderGallery(); renderPagination(); };
+                pagination.appendChild(btn);
+            };
+
+            createBtn('«', Math.max(1, currentPage - 1), currentPage === 1);
+            for (let i = startPage; i <= endPage; i++) createBtn(i, i, false);
+            createBtn('»', Math.min(totalPages, currentPage + 1), currentPage === totalPages);
+        }
+
         function openModal(index) {
             const animal = displayData[index];
             if (!animal) return;
 
             const days = calculateDays(animal.animal_createtime);
             const durationText = getDetailedDuration(animal.animal_createtime);
-            
-            let imgUrl = animal.album_file || '';
+            let imgUrl = animal.album_file || 'https://via.placeholder.com/400x300';
             if (imgUrl.startsWith('http:')) imgUrl = imgUrl.replace('http:', 'https:');
             
             const sibling = animal.animal_sex === 'M' ? '弟弟' : (animal.animal_sex === 'F' ? '妹妹' : '毛孩');
             const sexText = animal.animal_sex === 'M' ? '男生' : (animal.animal_sex === 'F' ? '女生' : '未標示');
-            
             const variety = animal.animal_Variety ? animal.animal_Variety.trim() : '米克斯';
             const place = animal.animal_place || animal.shelter_name;
-            
             const displayId = animal.animal_subid && animal.animal_subid.trim() !== '' ? animal.animal_subid : animal.animal_id;
 
-            // FB 文案
-            const fbText = `【認養文】求分享 🏠\n這隻可愛的${variety}${sibling}已經在${place}等家${days}天（相當於${durationText}）了！\n\n🐾 收容編號：${displayId}\n🐾 性別：${sexText}\n🐾 毛色：${animal.animal_colour}\n🐾 認養日期：${animal.animal_opendate} 後\n🐾 地點：${animal.shelter_address || '請洽收容所'}\n🐾 電話：${animal.shelter_tel}\n\n#領養代替購買 #動物認養`;
+            // 1. 產生 FB 文案並存入全域變數 (避免在 HTML onclick 中處理字串引發錯誤)
+            currentFBText = `【認養文】求分享 🏠\n這隻可愛的${variety}${sibling}已經在${place}等家${days}天（相當於${durationText}）了！\n\n🐾 收容編號：${displayId}\n🐾 性別：${sexText}\n🐾 毛色：${animal.animal_colour}\n🐾 認養日期：${animal.animal_opendate} 後\n🐾 地點：${animal.shelter_address || '請洽收容所'}\n🐾 電話：${animal.shelter_tel}\n\n#領養代替購買 #動物認養`;
 
             const modalBody = document.getElementById('modalBody');
-            
-            // 彈出視窗內容 (欄位與 FB 同步)
             modalBody.innerHTML = `
                 <div class="modal-left">
-                    <img src="${imgUrl || 'https://via.placeholder.com/400x300'}" class="modal-img">
+                    <img src="${imgUrl}" class="modal-img">
                 </div>
                 <div class="modal-right">
                     <div>
                         <div class="modal-title">${place}</div>
                         <div class="info-grid">
+                            <div class="info-item full-width"><span class="info-label">開放認養</span><span class="info-value" style="color:#2e7d32">適合認養 ( ${animal.animal_opendate} )</span></div>
                             <div class="info-item"><span class="info-label">收容編號</span><span class="info-value">${displayId}</span></div>
+                            <div class="info-item"><span class="info-label">入所日期</span><span class="info-value">${animal.animal_createtime}</span></div>
+                            <div class="info-item full-width"><span class="info-label">入所天數</span><span class="info-value" style="color:#d32f2f">${days} 天（相當於${durationText}）</span></div>
+                            <div class="info-item"><span class="info-label">品種</span><span class="info-value">${variety}</span></div>
                             <div class="info-item"><span class="info-label">性別</span><span class="info-value">${sexText}</span></div>
                             <div class="info-item"><span class="info-label">毛色</span><span class="info-value">${animal.animal_colour}</span></div>
-                            <div class="info-item"><span class="info-label">認養日期</span><span class="info-value" style="color:#2e7d32">${animal.animal_opendate} 後</span></div>
-                            <div class="info-item full-width"><span class="info-label">地點</span><span class="info-value">${animal.shelter_address || '請洽收容所'}</span></div>
                             <div class="info-item"><span class="info-label">電話</span><span class="info-value">${animal.shelter_tel}</span></div>
-                            
-                            <div class="info-item"><span class="info-label">品種</span><span class="info-value">${variety}</span></div>
-                            <div class="info-item full-width"><span class="info-label">入所天數</span><span class="info-value" style="color:#d32f2f">${days}天（相當於${durationText}）</span></div>
-                            <div class="info-item"><span class="info-label">入所日期</span><span class="info-value">${animal.animal_createtime}</span></div>
+                            <div class="info-item full-width"><span class="info-label">地點</span><span class="info-value">${animal.shelter_address || '請洽收容所'}</span></div>
                             ${animal.animal_remark ? `<div class="info-item full-width"><span class="info-label">備註</span><span class="info-value" style="color:#666;font-weight:normal">${animal.animal_remark}</span></div>` : ''}
                         </div>
                     </div>
-                    
                     <div>
                         <div class="btn-group">
-                            <button id="copyBtn" class="action-btn btn-copy" onclick="copyToClipboard(\`${fbText.replace(/`/g, '\\`')}\`)">
-                                📋 複製認養文
-                            </button>
-                            <button class="action-btn btn-img" onclick="window.open('${imgUrl}', '_blank')">
-                                🖼️ 開啟原始圖
-                            </button>
+                            <button id="copyBtn" class="action-btn btn-copy" onclick="copyCurrentFBText()">📋 複製認養文</button>
+                            <button class="action-btn btn-img" onclick="window.open('${imgUrl}', '_blank')">🖼️ 開啟原始圖</button>
                         </div>
                         <div class="tip-text">💡 複製文字後，請開啟原始圖下載，再到 FB 貼上圖片</div>
                     </div>
                 </div>
             `;
-
             document.getElementById('modalOverlay').style.display = 'flex';
             document.body.style.overflow = 'hidden';
         }
 
-        function closeModal(event) {
-            if (event === 'force' || event.target.id === 'modalOverlay') {
-                document.getElementById('modalOverlay').style.display = 'none';
-                document.body.style.overflow = 'auto';
-            }
-        }
-
-        function copyToClipboard(text) {
-            navigator.clipboard.writeText(text).then(() => {
+        function copyCurrentFBText() {
+            navigator.clipboard.writeText(currentFBText).then(() => {
                 const btn = document.getElementById('copyBtn');
                 const originalText = btn.innerHTML;
                 btn.innerHTML = '✅ 已複製';
@@ -557,6 +547,13 @@
             }).catch(err => {
                 alert('複製失敗，請手動複製。');
             });
+        }
+
+        function closeModal(event) {
+            if (event === 'force' || event.target.id === 'modalOverlay') {
+                document.getElementById('modalOverlay').style.display = 'none';
+                document.body.style.overflow = 'auto';
+            }
         }
 
         // 初始化
