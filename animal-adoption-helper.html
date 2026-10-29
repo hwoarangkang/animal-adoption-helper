@@ -36,7 +36,7 @@
             justify-content: center;
             align-items: center;
         }
-        select, button {
+        select, button, input[type="search"] {
             padding: 10px 14px;
             border: 1px solid #e1e4e8;
             border-radius: 8px;
@@ -95,6 +95,9 @@
         .tag.male { background: #e3f2fd; color: #1976d2; }
         .tag.female { background: #fce4ec; color: #c2185b; }
         .tag.info { background: #f5f5f5; color: #666; } /* 新增一般資訊標籤 */
+        .tag.urgent { background: #ffebee; color: #c62828; }
+        .result-count { text-align: center; color: #666; font-size: 14px; margin: 5px 0 0; }
+        .pagination button:disabled { opacity: 0.4; cursor: default; }
         
         .shelter-name {
             font-size: 14px; font-weight: bold; color: #2c3e50;
@@ -151,7 +154,8 @@
         @media (min-width: 768px) {
             .modal-body {
                 flex-direction: row;
-                height: 550px;
+                min-height: 400px;
+                max-height: calc(95vh - 20px);
             }
             .modal-left {
                 width: 45%;
@@ -166,6 +170,7 @@
                 display: flex;
                 flex-direction: column;
                 justify-content: space-between;
+                overflow-y: auto;
             }
             .modal-img {
                 width: 100%;
@@ -244,7 +249,7 @@
 
         @media (max-width: 600px) {
             .filter-group { flex-direction: column; }
-            select, button { width: 100%; }
+            select, button, input[type="search"] { width: 100%; }
         }
     </style>
 </head>
@@ -287,7 +292,6 @@
 
         <select id="bodySelect" onchange="applyFilters()">
             <option value="">📏 全部體型</option>
-            <option value="MINI">迷你</option>
             <option value="SMALL">小型</option>
             <option value="MEDIUM">中型</option>
             <option value="BIG">大型</option>
@@ -316,10 +320,21 @@
             <option value="F">女生</option>
         </select>
 
-        <button id="sortBtn" class="sort-btn" onclick="toggleSort()">
+        <select id="staySelect" onchange="applyFilters()">
+            <option value="">⏳ 全部等候天數</option>
+            <option value="30">等家超過30天</option>
+            <option value="180">等家超過半年</option>
+            <option value="365">等家超過1年</option>
+            <option value="730">等家超過2年</option>
+        </select>
+
+        <input type="search" id="keywordInput" placeholder="🔍 搜尋收容編號／品種／收容所" oninput="applyFilters()">
+
+        <button id="sortBtn" class="sort-btn active" onclick="toggleSort()">
             ⏳ 排序：入所時間 (最久先)
         </button>
     </div>
+    <div class="result-count" id="resultCount"></div>
 
     <div class="loading-overlay" id="loadingOverlay">
         <div class="spinner"></div>
@@ -343,7 +358,13 @@
         let currentPage = 1;
         const itemsPerPage = 24;
         let isSortAscending = true; 
-        let currentFBText = ""; 
+        let currentFBText = "";
+        let currentImgUrl = "";
+        const PLACEHOLDER_IMG = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22300%22 height=%22220%22%3E%3Crect width=%22100%25%22 height=%22100%25%22 fill=%22%23e0e0e0%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 fill=%22%23888%22 font-size=%2216%22%3E無照片%3C/text%3E%3C/svg%3E';
+        function escapeHtml(v) { return String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+        function parseDate(v) { const d = new Date(v); return isNaN(d.getTime()) ? null : d; }
+        function safeImgUrl(url) { if (!url) return PLACEHOLDER_IMG; let u = String(url).trim(); if (u.startsWith('http:')) u = u.replace('http:', 'https:'); return /^https:\/\//i.test(u) ? u : PLACEHOLDER_IMG; }
+        function openOriginalImage() { if (currentImgUrl && currentImgUrl !== PLACEHOLDER_IMG) window.open(currentImgUrl, '_blank', 'noopener'); } 
 
         // 核心邏輯：保持最穩定的版本 (一次抓 2000 筆)
         async function fetchAllData() {
@@ -351,16 +372,25 @@
             loadingOverlay.style.display = 'flex';
             
             try {
-                const apiUrl = `https://data.moa.gov.tw/Service/OpenData/TransService.aspx?UnitId=QcbUEzN6E6DL&$filter=animal_status eq 'OPEN'&$top=2000`;
-                const response = await fetch(apiUrl);
-                if (!response.ok) throw new Error('API Error');
-                
-                rawData = await response.json();
+                const baseApi = `https://data.moa.gov.tw/Service/OpenData/TransService.aspx?UnitId=QcbUEzN6E6DL&$filter=animal_status eq 'OPEN'`;
+                // 官方文件：單次查詢最多回傳1000筆，所以要用$skip一頁一頁抓完再本地排序，
+                // 否則「最久先」只在第一頁範圍內成立，等最久的孩子可能根本沒被抓進來
+                let all = [];
+                for (let skip = 0; skip < 10000; skip += 1000) {
+                    const response = await fetch(`${baseApi}&$top=1000&$skip=${skip}`, { signal: AbortSignal.timeout(20000) });
+                    if (!response.ok) throw new Error('API Error');
+                    const page = await response.json();
+                    if (!Array.isArray(page) || page.length === 0) break;
+                    all = all.concat(page);
+                    if (page.length < 1000) break;
+                }
+                rawData = all;
                 applyFilters(); 
                 
             } catch (error) {
                 console.error(error);
-                document.getElementById('gallery').innerHTML = '<div style="text-align:center; grid-column:1/-1; padding:30px;">⚠️ 無法連線至資料庫，請稍後再試。</div>';
+                document.getElementById('gallery').innerHTML = '<div style="text-align:center; grid-column:1/-1; padding:30px;">⚠️ 無法連線至資料庫，請稍後再試。<br><button onclick="fetchAllData()" style="margin-top:12px; cursor:pointer;">重新載入</button></div>';
+                document.getElementById('resultCount').textContent = '';
             } finally {
                 loadingOverlay.style.display = 'none';
             }
@@ -373,22 +403,36 @@
             const age = document.getElementById('ageSelect').value;
             const color = document.getElementById('colorSelect').value;
             const gender = document.getElementById('genderSelect').value;
+            const stay = document.getElementById('staySelect').value;
+            const keyword = document.getElementById('keywordInput').value.trim().toLowerCase();
 
             displayData = rawData.filter(animal => {
+                const kind = (animal.animal_kind || '').trim();
                 if (area && String(animal.animal_area_pkid) !== String(area)) return false;
                 
                 if (type) {
                     if (type === '其他') {
-                        if (animal.animal_kind === '狗' || animal.animal_kind === '貓') return false;
+                        if (kind === '狗' || kind === '貓') return false;
                     } else {
-                        if (animal.animal_kind !== type) return false;
+                        if (kind !== type) return false;
                     }
                 }
 
-                if (body && animal.animal_bodytype !== body) return false;
-                if (age && animal.animal_age !== age) return false;
-                if (color && animal.animal_colour !== color) return false;
-                if (gender && animal.animal_sex !== gender) return false;
+                if (body && (animal.animal_bodytype || '').trim() !== body) return false;
+                if (age && (animal.animal_age || '').trim() !== age) return false;
+                if (color) {
+                    const stem = { '黑色': '黑', '白色': '白', '虎斑': '虎斑', '棕色': '棕', '灰色': '灰', '黃色': '黃', '花色': '花' }[color] || color;
+                    if (!(animal.animal_colour || '').trim().includes(stem)) return false;
+                }
+                if (gender && (animal.animal_sex || '').trim() !== gender) return false;
+                if (stay) {
+                    const d = calculateDays(animal.animal_createtime);
+                    if (d === null || d < Number(stay)) return false;
+                }
+                if (keyword) {
+                    const hay = [animal.animal_subid, animal.animal_id, animal.animal_Variety, animal.shelter_name, animal.animal_place, animal.animal_remark, animal.animal_title].join(' ').toLowerCase();
+                    if (!hay.includes(keyword)) return false;
+                }
                 return true;
             });
 
@@ -399,30 +443,34 @@
             isSortAscending = !isSortAscending;
             const btn = document.getElementById('sortBtn');
             btn.innerHTML = isSortAscending ? '⏳ 排序：入所時間 (最久先)' : '🆕 排序：入所時間 (最新先)';
-            btn.classList.toggle('active', isSortAscending);
+            btn.classList.add('active');
             executeSort();
         }
 
         function executeSort() {
             displayData.sort((a, b) => {
-                const dateA = new Date(a.animal_createtime);
-                const dateB = new Date(b.animal_createtime);
+                const dateA = parseDate(a.animal_createtime);
+                const dateB = parseDate(b.animal_createtime);
+                if (!dateA && !dateB) return 0;
+                if (!dateA) return 1;
+                if (!dateB) return -1;
                 return isSortAscending ? dateA - dateB : dateB - dateA;
             });
             currentPage = 1;
-            renderGallery();
+            renderGallery(false);
             renderPagination();
         }
 
         function calculateDays(dateString) {
-            const start = new Date(dateString);
-            const now = new Date();
-            return Math.floor((now - start) / (1000 * 60 * 60 * 24));
+            const start = parseDate(dateString);
+            if (!start) return null;
+            const days = Math.floor((new Date() - start) / (1000 * 60 * 60 * 24));
+            return days < 0 ? 0 : days;
         }
 
         function formatDate(dateString) {
-            if (!dateString) return "";
-            const d = new Date(dateString);
+            const d = parseDate(dateString);
+            if (!d) return "未標示";
             const year = d.getFullYear();
             const month = String(d.getMonth() + 1).padStart(2, '0');
             const day = String(d.getDate()).padStart(2, '0');
@@ -430,8 +478,9 @@
         }
 
         function getDetailedDuration(dateString) {
-            const start = new Date(dateString);
+            const start = parseDate(dateString);
             const now = new Date();
+            if (!start || now < start) return "不到1天";
             let years = now.getFullYear() - start.getFullYear();
             let months = now.getMonth() - start.getMonth();
             let days = now.getDate() - start.getDate();
@@ -464,8 +513,11 @@
             return map[code] || '未標示';
         }
 
-        function renderGallery() {
+        function renderGallery(shouldScroll = false) {
             const gallery = document.getElementById('gallery');
+            document.getElementById('resultCount').textContent = displayData.length
+                ? `共 ${displayData.length} 筆，正在看第 ${currentPage} / ${Math.ceil(displayData.length / itemsPerPage)} 頁`
+                : '沒有符合條件的資料';
             if (displayData.length === 0) {
                 gallery.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #888;">🐕 找不到符合條件的毛小孩，試試看放寬條件吧！</div>';
                 document.getElementById('pagination').innerHTML = '';
@@ -477,29 +529,30 @@
             const animalsToShow = displayData.slice(start, end);
 
             gallery.innerHTML = animalsToShow.map((animal, index) => {
-                let imgUrl = animal.album_file || 'https://via.placeholder.com/300x220?text=無照片';
-                if (imgUrl.startsWith('http:')) imgUrl = imgUrl.replace('http:', 'https:');
-
+                const imgUrl = safeImgUrl(animal.album_file);
                 const days = calculateDays(animal.animal_createtime);
+                const daysText = days === null ? '入所日期未標示' : `🕒 已等待 ${days} 天`;
+                const urgentTag = days !== null && days >= 365 ? '<span class="tag urgent">🔥 等家超過1年</span>' : (days !== null && days >= 180 ? '<span class="tag urgent">等家超過半年</span>' : '');
                 const genderTag = animal.animal_sex === 'M' ? '<span class="tag male">♂ 男生</span>' : (animal.animal_sex === 'F' ? '<span class="tag female">♀ 女生</span>' : '');
-                
-                let typeTag = animal.animal_kind === '狗' ? '<span class="tag dog">🐶 狗狗</span>' : (animal.animal_kind === '貓' ? '<span class="tag cat">🐱 貓咪</span>' : `<span class="tag other">🐾 ${animal.animal_kind}</span>`);
+                const varietyText = animal.animal_Variety ? animal.animal_Variety.trim() : '米克斯';
+                const kindText = (animal.animal_kind || '').trim();
+                let typeTag = kindText === '狗' ? '<span class="tag dog">🐶 狗狗</span>' : (kindText === '貓' ? '<span class="tag cat">🐱 貓咪</span>' : `<span class="tag other">🐾 ${escapeHtml(kindText)}</span>`);
 
                 return `
-                <div class="animal-card" onclick="openModal(${start + index})">
-                    <img src="${imgUrl}" class="animal-img" loading="lazy" alt="animal">
+                <div class="animal-card" tabindex="0" role="button" aria-label="查看${escapeHtml(varietyText)}的認養資訊" onclick="openModal(${start + index})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openModal(${start + index});}">
+                    <img src="${imgUrl}" class="animal-img" loading="lazy" alt="${escapeHtml(varietyText)}照片" onerror="this.onerror=null;this.src='${PLACEHOLDER_IMG}'">
                     <div class="animal-info">
                         <div class="tag-row">
-                            ${typeTag} ${genderTag}
+                            ${typeTag} ${genderTag} ${urgentTag}
                         </div>
-                        <div class="shelter-name">${animal.animal_place || animal.shelter_name}</div>
-                        <div style="font-size:13px; color:#666;">${animal.animal_Variety ? animal.animal_Variety.trim() : '米克斯'} / ${animal.animal_colour}</div>
-                        <div class="days-count">🕒 已等待 ${days} 天</div>
+                        <div class="shelter-name">${escapeHtml(animal.shelter_name || animal.animal_place || '未標示')}</div>
+                        <div style="font-size:13px; color:#666;">${escapeHtml(varietyText)} / ${escapeHtml(animal.animal_colour || '未標示')}</div>
+                        <div class="days-count">${daysText}</div>
                     </div>
                 </div>
             `}).join('');
-            
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            if (shouldScroll) document.getElementById('gallery').scrollIntoView({ behavior: 'smooth' });
         }
 
         function renderPagination() {
@@ -519,13 +572,17 @@
                 btn.textContent = text;
                 btn.disabled = disabled;
                 btn.className = page === currentPage ? 'active' : '';
-                btn.onclick = () => { currentPage = page; renderGallery(); renderPagination(); };
+                btn.onclick = () => { currentPage = page; renderGallery(true); renderPagination(); };
                 pagination.appendChild(btn);
             };
 
             createBtn('«', Math.max(1, currentPage - 1), currentPage === 1);
             for (let i = startPage; i <= endPage; i++) createBtn(i, i, false);
             createBtn('»', Math.min(totalPages, currentPage + 1), currentPage === totalPages);
+            const info = document.createElement('span');
+            info.style.cssText = 'align-self:center; font-size:13px; color:#666; margin-left:8px;';
+            info.textContent = `第 ${currentPage} / ${totalPages} 頁`;
+            pagination.appendChild(info);
         }
 
         // --- Modal 功能 (加入體型與年紀) ---
@@ -538,13 +595,16 @@
             const formattedOpenDate = formatDate(animal.animal_opendate);
             const formattedCreateDate = formatDate(animal.animal_createtime);
 
-            let imgUrl = animal.album_file || 'https://via.placeholder.com/400x300';
-            if (imgUrl.startsWith('http:')) imgUrl = imgUrl.replace('http:', 'https:');
+            const imgUrl = safeImgUrl(animal.album_file);
+            currentImgUrl = imgUrl;
             
             const sibling = animal.animal_sex === 'M' ? '弟弟' : (animal.animal_sex === 'F' ? '妹妹' : '毛孩');
             const sexText = animal.animal_sex === 'M' ? '男生' : (animal.animal_sex === 'F' ? '女生' : '未標示');
             const variety = animal.animal_Variety ? animal.animal_Variety.trim() : '米克斯';
-            const place = animal.animal_place || animal.shelter_name;
+            const place = animal.shelter_name || animal.animal_place;
+            const actualPlace = animal.animal_place || '';
+            const sterilizationText = { 'T': '已絕育', 'F': '未絕育', 'N': '未標示' }[(animal.animal_sterilization || '').trim()] || '未標示';
+            const bacterinText = { 'T': '已施打', 'F': '未施打', 'N': '未標示' }[(animal.animal_bacterin || '').trim()] || '未標示';
             const displayId = animal.animal_subid && animal.animal_subid.trim() !== '' ? animal.animal_subid : animal.animal_id;
             const foundPlace = animal.animal_foundplace || '無資料';
             
@@ -552,48 +612,53 @@
             const bodyType = getBodyType(animal.animal_bodytype);
             const ageText = getAge(animal.animal_age);
 
-            currentFBText = `【認養文】求分享 🏠\n這隻可愛的${variety}${sibling}已經在${place}等家${days}天（相當於${durationText}）了！\n\n🐾 收容編號：${displayId}\n🐾 性別：${sexText}\n🐾 毛色：${animal.animal_colour}\n🐾 拾獲地點：${foundPlace}\n🐾 公告收容所：${place}\n🐾 可認養日期：${formattedOpenDate} 後\n🐾 地點：${animal.shelter_address || '請洽收容所'}\n🐾 電話：${animal.shelter_tel}\n\n#領養代替購買 #動物認養 #圖片經由AI放大處理`;
+            const fbDays = days === null ? '一段時間' : `${days}天`;
+            const fbDuration = days === null ? '' : `（相當於${durationText}）`;
+            currentFBText = `【認養文】求分享 🏠\n這隻可愛的${variety}${sibling}已經在${place}等家${fbDays}${fbDuration}了！\n\n🐾 收容編號：${displayId}\n🐾 性別：${sexText}／體型：${bodyType}／年紀：${ageText}\n🐾 毛色：${animal.animal_colour || '未標示'}\n🐾 絕育：${sterilizationText}／狂犬病疫苗：${bacterinText}\n🐾 拾獲地點：${foundPlace}\n🐾 可認養日期：${formattedOpenDate} 後\n🐾 地點：${animal.shelter_address || '請洽收容所'}\n🐾 電話：${animal.shelter_tel || '請洽收容所'}\n\n#領養代替購買 #動物認養`;
 
             const modalBody = document.getElementById('modalBody');
             
             modalBody.innerHTML = `
                 <div class="modal-left">
-                    <img src="${imgUrl || 'https://via.placeholder.com/400x300'}" class="modal-img">
+                    <img src="${imgUrl}" class="modal-img" alt="${escapeHtml(variety)}照片" onerror="this.onerror=null;this.src='${PLACEHOLDER_IMG}'">
                 </div>
                 <div class="modal-right">
                     <div>
-                        <div class="modal-title">${place}</div>
+                        <div class="modal-title">${escapeHtml(variety)}｜${escapeHtml(place)}</div>
                         <div class="info-grid">
                             <div class="info-item full-width">
                                 <span class="info-label">可認養日期</span>
                                 <span class="info-value" style="color:#2e7d32">適合認養 ( ${formattedOpenDate} )</span>
                             </div>
-                            <div class="info-item"><span class="info-label">收容編號</span><span class="info-value">${displayId}</span></div>
+                            <div class="info-item"><span class="info-label">收容編號</span><span class="info-value">${escapeHtml(displayId)}</span></div>
                             <div class="info-item"><span class="info-label">入所日期</span><span class="info-value">${formattedCreateDate}</span></div>
                             
                             <div class="info-item full-width">
                                 <span class="info-label">入所天數</span>
-                                <span class="info-value" style="color:#d32f2f">${days}天（相當於${durationText}）</span>
+                                <span class="info-value" style="color:#d32f2f">${days === null ? '未標示' : `${days}天（相當於${durationText}）`}</span>
                             </div>
                             
-                            <div class="info-item"><span class="info-label">拾獲地點</span><span class="info-value">${foundPlace}</span></div>
-                            <div class="info-item"><span class="info-label">公告收容所</span><span class="info-value">${place}</span></div>
-                            <div class="info-item"><span class="info-label">品種</span><span class="info-value">${variety}</span></div>
-                            <div class="info-item"><span class="info-label">性別</span><span class="info-value">${sexText}</span></div>
+                            <div class="info-item"><span class="info-label">拾獲地點</span><span class="info-value">${escapeHtml(foundPlace)}</span></div>
+                            <div class="info-item"><span class="info-label">公告收容所</span><span class="info-value">${escapeHtml(place)}</span></div>
+                            ${actualPlace && actualPlace !== place ? `<div class="info-item"><span class="info-label">實際所在地</span><span class="info-value">${escapeHtml(actualPlace)}</span></div>` : ''}
+                            <div class="info-item"><span class="info-label">品種</span><span class="info-value">${escapeHtml(variety)}</span></div>
+                            <div class="info-item"><span class="info-label">性別</span><span class="info-value">${escapeHtml(sexText)}</span></div>
                             
-                            <div class="info-item"><span class="info-label">體型</span><span class="info-value">${bodyType}</span></div>
-                            <div class="info-item"><span class="info-label">年紀</span><span class="info-value">${ageText}</span></div>
+                            <div class="info-item"><span class="info-label">體型</span><span class="info-value">${escapeHtml(bodyType)}</span></div>
+                            <div class="info-item"><span class="info-label">年紀</span><span class="info-value">${escapeHtml(ageText)}</span></div>
+                            <div class="info-item"><span class="info-label">絕育</span><span class="info-value">${escapeHtml(sterilizationText)}</span></div>
+                            <div class="info-item"><span class="info-label">狂犬病疫苗</span><span class="info-value">${escapeHtml(bacterinText)}</span></div>
                             
-                            <div class="info-item"><span class="info-label">毛色</span><span class="info-value">${animal.animal_colour}</span></div>
-                            <div class="info-item"><span class="info-label">電話</span><span class="info-value">${animal.shelter_tel}</span></div>
-                            <div class="info-item full-width"><span class="info-label">地點</span><span class="info-value">${animal.shelter_address || '請洽收容所'}</span></div>
-                            ${animal.animal_remark ? `<div class="info-item full-width"><span class="info-label">備註</span><span class="info-value" style="color:#666;font-weight:normal">${animal.animal_remark}</span></div>` : ''}
+                            <div class="info-item"><span class="info-label">毛色</span><span class="info-value">${escapeHtml(animal.animal_colour || '未標示')}</span></div>
+                            <div class="info-item"><span class="info-label">電話</span><span class="info-value">${escapeHtml(animal.shelter_tel || '請洽收容所')}</span></div>
+                            <div class="info-item full-width"><span class="info-label">地點</span><span class="info-value">${escapeHtml(animal.shelter_address || '請洽收容所')}</span></div>
+                            ${animal.animal_remark ? `<div class="info-item full-width"><span class="info-label">備註</span><span class="info-value" style="color:#666;font-weight:normal">${escapeHtml(animal.animal_remark)}</span></div>` : ''}
                         </div>
                     </div>
                     <div>
                         <div class="btn-group">
                             <button id="copyBtn" class="action-btn btn-copy" onclick="copyCurrentFBText()">📋 複製認養文</button>
-                            <button class="action-btn btn-img" onclick="window.open('${imgUrl}', '_blank')">🖼️ 開啟原始圖</button>
+                            <button class="action-btn btn-img" onclick="openOriginalImage()">🖼️ 開啟原始圖</button>
                         </div>
                         <div class="tip-text">💡 複製文字後，請開啟原始圖下載，再到 FB 貼上圖片</div>
                     </div>
@@ -604,8 +669,9 @@
         }
 
         function copyCurrentFBText() {
-            navigator.clipboard.writeText(currentFBText).then(() => {
+            const done = () => {
                 const btn = document.getElementById('copyBtn');
+                if (!btn) return;
                 const originalText = btn.innerHTML;
                 btn.innerHTML = '✅ 已複製';
                 btn.classList.add('success');
@@ -613,9 +679,21 @@
                     btn.innerHTML = originalText;
                     btn.classList.remove('success');
                 }, 1500);
-            }).catch(err => {
-                alert('複製失敗，請手動複製。');
-            });
+            };
+            const fallbackCopy = () => {
+                const ta = document.createElement('textarea');
+                ta.value = currentFBText;
+                document.body.appendChild(ta);
+                ta.select();
+                try { return document.execCommand('copy'); } catch (e) { return false; }
+                finally { document.body.removeChild(ta); }
+            };
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(currentFBText).then(done).catch(() => {
+                    if (fallbackCopy()) done(); else alert('複製失敗，請手動複製。');
+                });
+            } else if (fallbackCopy()) done();
+            else alert('複製失敗，請手動複製。');
         }
 
         function closeModal(event) {
@@ -624,6 +702,10 @@
                 document.body.style.overflow = 'auto';
             }
         }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && document.getElementById('modalOverlay').style.display === 'flex') closeModal('force');
+        });
 
         fetchAllData();
     </script>
